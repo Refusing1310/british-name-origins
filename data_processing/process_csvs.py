@@ -11,8 +11,6 @@ def load_header_columns(header_file: Path, ignored_columns: list[str] | None = N
     if header_df.empty:
         raise ValueError(f"Header file is empty: {header_file}")
     columns = header_df.iloc[0].tolist()
-    if ignored_columns:
-        columns = [col for col in columns if col not in ignored_columns]
     return columns
 
 
@@ -36,12 +34,30 @@ def combine_csvs_to_dataframe(
 
 def save_combined_data(output_path: Path, csv_folder: Path, header_file: Path, ignored_columns: list[str]) -> pd.DataFrame:
     """Create the combined dataframe of data and write it to disk."""
-
     combined_df = combine_csvs_to_dataframe(csv_folder, header_file, ignored_columns)
-    # Drop any rows where the type is not "populatedPlace"
-    if "TYPE" in combined_df.columns:
-        combined_df = combined_df[combined_df["POPULATED_PLACE_TYPE"] == "populatedPlace"]
+    
+    cleaned_df = clean_dataframe(combined_df, ignored_columns)
 
-    combined_df.to_csv(output_path, index=False)
-    return combined_df
+    cleaned_df.to_csv(output_path, index=False)
+    return cleaned_df
+
+
+def clean_dataframe(df: pd.DataFrame, ignored_columns: list[str]) -> pd.DataFrame:
+    """Clean the dataframe by dropping ignored columns and removing URL prefixes."""
+    # Drop ignored columns
+    df = df.drop(columns=[col for col in ignored_columns if col in df.columns], errors='ignore')
+
+    # Strip "http://data.ordnancesurvey.co.uk/ontology/admingeo/" from "LOCAL_TYPE" 
+    if "LOCAL_TYPE" in df.columns:
+        df["LOCAL_TYPE"] = df["LOCAL_TYPE"].str.replace(r'^http://data.ordnancesurvey.co.uk/ontology/admingeo/', '', regex=True)
+
+    # Set any "http://data.ordnancesurvey.co.uk/id/" fields to empty strings in the "TYPE" column
+    if "TYPE" in df.columns:
+        df["TYPE"] = df["TYPE"].apply(lambda x: "" if isinstance(x, str) and x.startswith("http://data.ordnancesurvey.co.uk/id/") else x)
+    
+    # Drop any rows where the type is not "populatedPlace"
+    # if "TYPE" in combined_df.columns:
+    #     combined_df = combined_df[combined_df["TYPE"] == "populatedPlace"]
+
+    return df
 

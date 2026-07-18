@@ -43,6 +43,9 @@ def import_and_process_data() :
 
     geo_df = convert_to_geo_dataframe(ordinance_survey_df)
     parsed_geo_df = parse_place_names(geo_df)
+
+    # Store in csv file to prevent having to reprocess the data every time the script is run.
+    parsed_geo_df.to_csv("data/processed/ordinance_survey_gdf.csv", index=False)
     return parsed_geo_df
 
 if __name__ == "__main__":

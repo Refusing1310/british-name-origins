@@ -1,0 +1,40 @@
+element,priority,confidence,language,origin,meaning,period,category
+wickham,120,0.95,Old English,Germanic,settlement,Anglo-Saxon,Settlement
+ington,115,0.95,Old English,Germanic,settlement of the people of,Anglo-Saxon,Settlement
+chester,110,1.00,Latin,Romance,Roman fort,Roman,Fortification
+caster,110,1.00,Latin,Romance,Roman fort,Roman,Fortification
+cester,110,1.00,Latin,Romance,Roman fort,Roman,Fortification
+thorpe,105,1.00,Old Norse,Germanic,secondary settlement,Viking,Settlement
+thwaite,105,1.00,Old Norse,Germanic,clearing,Viking,Landscape
+borough,105,0.95,Old English,Germanic,fortified place,Anglo-Saxon,Fortification
+bridge,100,0.85,Old English,Germanic,bridge,Medieval,Crossing
+worth,100,0.98,Old English,Germanic,enclosure,Anglo-Saxon,Settlement
+thorp,95,0.98,Old Norse,Germanic,secondary settlement,Viking,Settlement
+toft,95,1.00,Old Norse,Germanic,homestead,Viking,Settlement
+hurst,95,0.98,Old English,Germanic,wooded hill,Anglo-Saxon,Topography
+stoke,95,0.95,Old English,Germanic,secondary settlement,Anglo-Saxon,Settlement
+beck,95,1.00,Old Norse,Germanic,stream,Viking,Water
+dale,95,0.98,Old Norse,Germanic,valley,Viking,Topography
+fell,95,1.00,Old Norse,Germanic,mountain,Viking,Topography
+holm,95,0.98,Old Norse,Germanic,island,Viking,Topography
+ness,95,0.95,Old Norse,Germanic,headland,Viking,Topography
+bury,90,0.90,Old English,Germanic,fortified place,Anglo-Saxon,Fortification
+burgh,90,0.95,Old English,Germanic,fortified place,Anglo-Saxon,Fortification
+ford,90,0.98,Old English,Germanic,river crossing,Anglo-Saxon,Crossing
+wick,90,0.80,Old English,Germanic,dwelling or trading place,Anglo-Saxon,Settlement
+wich,90,0.90,Old English,Germanic,salt works,Anglo-Saxon,Industry
+ham,85,0.98,Old English,Germanic,homestead,Anglo-Saxon,Settlement
+ton,85,0.97,Old English,Germanic,enclosure or farm,Anglo-Saxon,Settlement
+ley,85,0.95,Old English,Germanic,woodland clearing,Anglo-Saxon,Landscape
+leigh,85,0.95,Old English,Germanic,woodland clearing,Anglo-Saxon,Landscape
+lea,80,0.90,Old English,Germanic,meadow,Anglo-Saxon,Landscape
+ing,75,0.70,Old English,Germanic,people of,Anglo-Saxon,Tribal
+end,70,0.40,Old English,Germanic,end of settlement,Medieval,Settlement
+field,70,0.45,Old English,Germanic,open land,Anglo-Saxon,Landscape
+well,70,0.60,Old English,Germanic,spring,Anglo-Saxon,Water
+wood,70,0.70,Old English,Germanic,woodland,Anglo-Saxon,Landscape
+dene,70,0.80,Old English,Germanic,valley,Anglo-Saxon,Topography
+den,65,0.65,Old English,Germanic,pasture,Anglo-Saxon,Landscape
+fold,65,0.75,Old English,Germanic,enclosure,Anglo-Saxon,Settlement
+street,60,0.90,Old English,Germanic,Roman road,Anglo-Saxon,Road
+by,95,1.00,Old Norse,Germanic,village or farm,Viking,Settlement

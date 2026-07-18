@@ -30,6 +30,4 @@ def convert_to_geo_dataframe(df1):
     # Drop the original coordinate columns after creating the geometry
     gdf = gdf.drop(columns=["GEOMETRY_X", "GEOMETRY_Y"], errors='ignore')
 
-    # Store in csv file to prevent having to reprocess the data every time the script is run.
-    gdf.to_csv("data/processed/ordinance_survey_gdf.csv", index=False)
     return gdf

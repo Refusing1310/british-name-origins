@@ -1,0 +1,1 @@
+# Create the database and tables if they don't exist, then import data from the csv file to the database

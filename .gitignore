@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+#  Data files
+data/raw/ons_data
+data/raw/opname_csv_gb

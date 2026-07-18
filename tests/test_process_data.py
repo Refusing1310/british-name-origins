@@ -1,6 +1,7 @@
 import constants.constants as constants
 from pathlib import Path
 import pandas as pd
+import geopandas as gpd
 
 from data_processing.process_csvs import combine_csvs_to_dataframe
 from data_processing.process_excel import process_excel_file
@@ -15,8 +16,8 @@ def test_combine_csvs_to_dataframe_uses_header_and_concatenates_rows():
 
     assert isinstance(df, pd.DataFrame)
     assert not df.empty
-    assert list(df.columns)[:3] == ["NAME1","TYPE", "LOCAL_TYPE"]
-    assert len(df.columns) == 13
+    assert list(df.columns)[:3] == ["ID","NAMES_URI", "NAME1"]
+    assert len(df.columns) == 34
 
 
 def test_process_excel_file_drops_year_columns_when_ignored_columns_are_strings(tmp_path):
@@ -65,5 +66,4 @@ def test_process_excel_file_drops_year_columns_when_ignored_columns_are_strings(
     assert "Population Growth 2001-2019 (%)" not in result.columns
     assert "TOWN NAME" in result.columns
     assert "Population" in result.columns
-
 

@@ -25,14 +25,20 @@ def parse_place_names(geo_df) -> pd.DataFrame:
         prefix = find_prefix(place_name_lower, prefixes)
         root = place_name
 
-        # Remove the suffix and prefix from the root if they were found
+        # Remove the  prefix and suffix from the root if they were found
+        if prefix is not None:
+            root = root[len(prefix[0]):]
         if suffix is not None:
             root = root[:-len(suffix[0])]
         if prefix is not None:
-            root = root[len(prefix[0]):]
-
-        geo_df.at[index, "suffix"] = suffix if suffix is not None else None
-        geo_df.at[index, "prefix"] = prefix if prefix is not None else None
+            geo_df.at[index, "prefix"] = prefix[0]
+            geo_df.at[index, "prefix_language"] = prefix[1]
+            geo_df.at[index, "prefix_confidence"] = prefix[2]
+        if suffix is not None:
+            geo_df.at[index, "suffix"] = suffix[0]
+            geo_df.at[index, "suffix_language"] = suffix[1]
+            geo_df.at[index, "suffix_confidence"] = suffix[2]
+        
         geo_df.at[index, "root"] = root.strip()
 
     return geo_df

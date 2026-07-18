@@ -36,9 +36,6 @@ def combine_csvs_to_dataframe(
 
 def save_combined_data(output_path: Path, csv_folder: Path, header_file: Path, ignored_columns: list[str]) -> pd.DataFrame:
     """Create the combined dataframe of data and write it to disk."""
-    # # Create the output directory if it doesn't exist
-    # project_root = Path(__file__).resolve().parents[1]
-    # output_path.parent.mkdir(parents=True, exist_ok=True)
 
     combined_df = combine_csvs_to_dataframe(csv_folder, header_file, ignored_columns)
     combined_df.to_csv(output_path, index=False)

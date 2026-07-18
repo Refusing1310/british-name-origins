@@ -220,7 +220,7 @@ __marimo__/
 #  Data files
 data/raw/ons_data
 data/raw/opname_csv_gb
-data/processed/ordinance_survey_combined.csv
+data/processed/ordinance_survey.csv
 data/processed/ons_combined.csv
 
 

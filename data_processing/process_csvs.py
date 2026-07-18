@@ -38,6 +38,10 @@ def save_combined_data(output_path: Path, csv_folder: Path, header_file: Path, i
     """Create the combined dataframe of data and write it to disk."""
 
     combined_df = combine_csvs_to_dataframe(csv_folder, header_file, ignored_columns)
+    # Drop any rows where the type is not "populatedPlace"
+    if "TYPE" in combined_df.columns:
+        combined_df = combined_df[combined_df["POPULATED_PLACE_TYPE"] == "populatedPlace"]
+
     combined_df.to_csv(output_path, index=False)
     return combined_df
 

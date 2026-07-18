@@ -15,7 +15,7 @@ def test_combine_csvs_to_dataframe_uses_header_and_concatenates_rows():
 
     assert isinstance(df, pd.DataFrame)
     assert not df.empty
-    assert list(df.columns)[:3] == ["NAME1","NAME2","TYPE"]
+    assert list(df.columns)[:3] == ["NAME1","TYPE", "LOCAL_TYPE"]
     assert len(df.columns) == 13
 
 
@@ -63,4 +63,7 @@ def test_process_excel_file_drops_year_columns_when_ignored_columns_are_strings(
     assert "2002" not in result.columns
     assert "2018" not in result.columns
     assert "Population Growth 2001-2019 (%)" not in result.columns
-    assert "TOWN_2011NAME" in result.columns
+    assert "TOWN NAME" in result.columns
+    assert "Population" in result.columns
+
+

@@ -1,3 +1,4 @@
+import constants
 from pathlib import Path
 import pandas as pd
 
@@ -5,7 +6,11 @@ from scripts.process_data import combine_csvs_to_dataframe
 
 
 def test_combine_csvs_to_dataframe_uses_header_and_concatenates_rows():
-    df = combine_csvs_to_dataframe()
+    df = combine_csvs_to_dataframe(
+        csv_folder=Path("data/raw"),
+        header_file=Path("data/raw/header.csv"),
+        ignored_columns= constants.OS_IGNORED_COLUMNS
+    )
 
     assert isinstance(df, pd.DataFrame)
     assert not df.empty

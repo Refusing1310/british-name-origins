@@ -34,8 +34,8 @@ def combine_csvs_to_dataframe(
     return pd.concat(frames, ignore_index=True)
 
 
-def save_combined_os_data(output_path: Path, csv_folder: Path, header_file: Path, ignored_columns: list[str]) -> pd.DataFrame:
-    """Create the combined dataframe of ordinance survey data and write it to disk."""
+def save_combined_data(output_path: Path, csv_folder: Path, header_file: Path, ignored_columns: list[str]) -> pd.DataFrame:
+    """Create the combined dataframe of data and write it to disk."""
     # # Create the output directory if it doesn't exist
     # project_root = Path(__file__).resolve().parents[1]
     # output_path.parent.mkdir(parents=True, exist_ok=True)

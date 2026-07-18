@@ -219,8 +219,10 @@ __marimo__/
 
 #  Data files
 data/raw/ons_data
-data/raw/
+data/raw/opname_csv_gb
 data/processed/opname_combined.csv
+data/processed/ons_combined.csv
+
 
 # Vscode stuff
 .vscode/

@@ -43,7 +43,7 @@ def save_combined_data(output_path: Path, csv_folder: Path, header_file: Path, i
 
 
 def clean_dataframe(df: pd.DataFrame, ignored_columns: list[str]) -> pd.DataFrame:
-    """Clean the dataframe by dropping ignored columns and removing URL prefixes."""
+    """Clean the dataframe by dropping ignored columns and removing URL prefixes, along with ensuring only actual towns and cities are kept."""
     # Drop ignored columns
     df = df.drop(columns=[col for col in ignored_columns if col in df.columns], errors='ignore')
 
@@ -51,13 +51,16 @@ def clean_dataframe(df: pd.DataFrame, ignored_columns: list[str]) -> pd.DataFram
     if "LOCAL_TYPE" in df.columns:
         df["LOCAL_TYPE"] = df["LOCAL_TYPE"].str.replace(r'^http://data.ordnancesurvey.co.uk/ontology/admingeo/', '', regex=True)
 
-    # Set any "http://data.ordnancesurvey.co.uk/id/" fields to empty strings in the "TYPE" column
-    if "TYPE" in df.columns:
-        df["TYPE"] = df["TYPE"].apply(lambda x: "" if isinstance(x, str) and x.startswith("http://data.ordnancesurvey.co.uk/id/") else x)
-    
     # Drop any rows where the type is not "populatedPlace"
-    # if "TYPE" in combined_df.columns:
-    #     combined_df = combined_df[combined_df["TYPE"] == "populatedPlace"]
+    if "TYPE" in df.columns:
+        df = df[df["TYPE"] == "populatedPlace"]
 
+    # Remove "TYPE" column if it exists
+    if "TYPE" in df.columns:
+        df = df.drop(columns=["TYPE"])  
+
+    # Rename "NAME1" to "NAME" if it exists
+    if "NAME1" in df.columns:
+        df = df.rename(columns={"NAME1": "NAME"})
     return df
 

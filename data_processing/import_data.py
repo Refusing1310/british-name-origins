@@ -1,1 +1,0 @@
-# import data from os open names csv file to database

@@ -16,25 +16,33 @@ def load_header_columns(header_file: Path, ignored_columns: list[str] | None = N
 
 def combine_csvs_to_dataframe(
     csv_folder: Path,
-    header_file: Path,
+    separate_header_file: bool,
     ignored_columns: list[str],
+    header_file: Path | None = None
 ) -> pd.DataFrame:
     """Combine all CSV files in the provided folder into a single dataframe."""
-    project_root = Path(__file__).resolve().parents[1]
-
-
-    columns = load_header_columns(header_file, ignored_columns)
+    if separate_header_file:
+        if header_file is None:
+            raise ValueError("Header file must be provided when separate_header_file is True.")
+        columns = load_header_columns(header_file, ignored_columns)
+    else:
+        columns = None  # Let pandas infer the columns if no separate header file is provided
     csv_files = sorted(csv_folder.glob("*.csv"))
+
     if not csv_files:
         raise FileNotFoundError(f"No CSV files found in {csv_folder}")
-
+    
+    if columns is None:
+        # If no separate header file is provided, read the first CSV to get the columns
+        first_csv_df = pd.read_csv(csv_files[0], header=0, dtype=str)
+        columns = first_csv_df.columns.tolist()
     frames = [pd.read_csv(path, header=None, names=columns, dtype=str) for path in csv_files]
     return pd.concat(frames, ignore_index=True)
 
 
 def save_combined_data(output_path: Path, csv_folder: Path, header_file: Path, ignored_columns: list[str]) -> pd.DataFrame:
     """Create the combined dataframe of data and write it to disk."""
-    combined_df = combine_csvs_to_dataframe(csv_folder, header_file, ignored_columns)
+    combined_df = combine_csvs_to_dataframe(csv_folder, separate_header_file=True, header_file=header_file, ignored_columns=ignored_columns)
     
     cleaned_df = clean_dataframe(combined_df, ignored_columns)
 
@@ -64,3 +72,19 @@ def clean_dataframe(df: pd.DataFrame, ignored_columns: list[str]) -> pd.DataFram
         df = df.rename(columns={"NAME1": "NAME"})
     return df
 
+def process_kepn_data(csv_folder: Path, output_path: Path) -> list[pd.DataFrame]:
+    """Read from the CSV folder and save the processed data to a CSV file."""
+    ground_truth_df = combine_csvs_to_dataframe(csv_folder, separate_header_file=False, ignored_columns=[])
+    elements_df = parse_elements(ground_truth_df.copy())
+
+    return [ground_truth_df, elements_df]
+    
+def parse_elements(df: pd.DataFrame) -> pd.DataFrame:
+    """Parse the elements (roots, suffixes, prefixes) from the kepn dataset"""
+    # Create new dataframe to store the elements
+    elements_df = pd.DataFrame(columns=["Canonical Name", "Language", "Meaning", "Frequency"])
+
+    # Loop through the dataframe and parse the elements from the "Derivations" column
+    if "Derivations" not in df.columns:
+        raise ValueError("The 'Derivations' column is missing from the dataframe.")
+    return elements_df

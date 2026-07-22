@@ -153,43 +153,66 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
     derivations_list = str(derivations).split(";")
     for i in range(len(derivations_list)):
         derivation = clean_text(derivations_list[i])
-        if not derivation:
+        if not derivation or derivation == "":
+            # Skip processing if the derivation is empty
             continue
-        # Check if the next semicolon is part of a definition and not a separator for multiple derivations
-        if i + 1 < len(derivations_list):
-            next_derivation = clean_text(derivations_list[i + 1])
-            if next_derivation:
-                # If the first word of the next derivation is one of these identifiers, then it's part of the current definition and not a new derivation. Append it to the current derivation.
-                first_word = next_derivation.split()[0].strip("[]\"' ")
-                if not next_derivation.__contains__(" - "):
-                    if first_word not in non_definition_starters:
+        first_word = derivation.split()[0].strip("[]\"' ")
+        if first_word in non_definition_starters:
+            # Skip processing if the derivation is a known non-definition starter
+            continue
+        valid_derivation = False
+        # Keep checking the next derivation until we find a valid one or run out of derivations, joining them together if necessary. 
+        # This is to handle cases where a semicolon is used in a definition, which can cause the derivation to be split incorrectly.
+        while not valid_derivation:
+            if i + 1 < len(derivations_list):
+                next_derivation = clean_text(derivations_list[i + 1])
+                if next_derivation:
+                    # If the first word of the next derivation is one of these identifiers, then it's part of the current definition and not a new derivation. Append it to the current derivation.
+                    first_word = next_derivation.split()[0].strip("[]\"' ")
+                    if first_word in non_definition_starters:
+                        # This IS a known non-definition starter, so merge it
+                        derivation += "; " + next_derivation
+                        i += 1  # Skip the next derivation since we've merged it
+                    else:
+                        # There are special cases and require special handling (one of the only cases where the definition might not have a language associated with it). 
+                        # If the first word is one of these, then we can assume it's a separate derivation and not part of the current definition. We can stop merging and move on to the next derivation.
+                        if first_word in ["Personal", "River-name", "Place-name", "Obscure", "Family-name", "Tribal-name"]:
+                            valid_derivation = True
+                            break
+                        # The word isn't a known non-definition starter, so check if it contains any of the known languages. If it doesn't, then it's part of the current definition. 
+                        # If it does contain a known language, then it's a new derivation and we should stop merging.
                         contains_language = False
                         for lang in languages:
                             if lang in next_derivation:
                                 contains_language = True
+                                valid_derivation = True
+                                break
                         if not contains_language:
+                            # Add it as a non-definition starter for future reference
+                            if first_word == "Personal":
+                                print(f"Adding non-definition starter: {first_word}, derivation: {derivation}, all derivations: {derivations_list}")
                             non_definition_starters.append(first_word)
-                    else:
-                        derivation += "; " + next_derivation
-                        derivations_list[i + 1] = ""  # Clear the next derivation since it's been merged with the current one
-        first_word = derivation.split()[0].strip("[]\"' ")
+                            derivation += "; " + next_derivation
+                            i += 1  # Skip the next derivation since we've merged it
+            else:
+                valid_derivation = True  # No more derivations to check, so we're done merging
         match first_word:
             case "Personal":
-                if row["Etymology"] is None or pd.isna(row["Etymology"]):
-                    # If the etymology is missing, we can't extract the element name, so we skip this derivation.
-                    continue
-                # Personal name is the first two words, the rest is the language
-                meaning = "Personal name"
-                word = row["Etymology"].split()[0].strip("[]\"' ")
-                match word:
-                    # case "probably":
-                    case _:
-                        element = word.strip("'s")
-                        language = get_language_from_derivation(derivation, languages)
-            # case "River-name":
-            # case "Uncertain":
-            # case "Place-name":
-            # case "Obscure":
+                meaning = derivation 
+                # More likely to come from etymology than place name, so check etymology first. If not found, then check place name.
+                if row["Etymology"] and not pd.isna(row["Etymology"]):
+                    element = get_name_from_string(row["Etymology"])
+                else:
+                    element = get_name_from_string(row["PlaceName"])
+            case "River-name":
+                meaning = derivation
+                element = row["PlaceName"]
+            case "Place-name":
+                meaning = derivation
+                element = row["PlaceName"]
+            case "Obscure":
+                meaning = derivation
+                element = row["PlaceName"]
             case _:
                 if len(derivation.split(" - ", 1)) < 2:
                     # Doesn't have a meaning
@@ -201,7 +224,6 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
                     meaning = clean_text(meaning)
                     head_parts = head.split()
                     element = head_parts[0]
-                    meaning = None
         language = get_language_from_derivation(derivation, languages)
         existing_record = locateElement(elements, element)
         if existing_record is None:
@@ -237,3 +259,17 @@ def get_language_from_derivation(derivation: str, languages: list[str]) -> str |
         if lang in derivation:
             return lang
     return None
+
+def get_name_from_string(string: str) -> str:
+    """Extract the name from the etymology string."""
+    # Name either starts with an asterisk, ends with 's, or is proceeded by "with"
+    if string == "":
+        return ""
+    words = string.split()
+    for i in range(len(words)):
+        word = words[i]
+        if word.startswith("*") or word.endswith("'s"):
+            return word.strip("'s")
+        if i > 0 and words[i - 1].lower() == "with":
+            return word.strip("'s")
+    return ""

@@ -221,8 +221,7 @@ __marimo__/
 data/raw/ons_data
 data/raw/opname_csv_gb
 # For now while they are changing constantly, but eventually we will want to keep these in the repo
-data/processed/elements.csv
-data/processed/ground_truth.csv
+data/processed/*.csv
 
 # Vscode stuff
 .vscode/

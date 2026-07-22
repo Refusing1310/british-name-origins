@@ -15,7 +15,7 @@ def import_and_process_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
     Path("data/processed").mkdir(parents=True, exist_ok=True)
 
     # Check if the processed files files already exist for the key english place names data, and if not, create them.
-    if not Path("data/processed/ground_truth.csv").exists() or not Path("data/processed/elements.csv").exists():
+    if not Path("data/processed/ground_truth.csv").exists() or not Path("data/processed/REVERT.csv").exists():
         ground_truth_df, elements_df = process_kepn_data(
             csv_folder=Path("data/raw/kepn/"),
             output_folder=Path("data/processed/"),
@@ -51,13 +51,13 @@ def import_and_process_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
     #     office_of_national_statistics_df = Path("data/processed/ons.csv")
 
     geo_df = convert_to_geo_dataframe(ordinance_survey_df)
-    parsed_geo_df = parse_place_names(geo_df, Path("data/processed/aliases.csv"))
+    # geo_df = parse_place_names(geo_df, Path("data/processed/aliases.csv"))
 
     # Store in csv file to prevent having to reprocess the data every time the script is run.
-    parsed_geo_df.to_csv("data/processed/ordinance_survey_gdf.csv", index=False)
+    # geo_df.to_csv("data/processed/ordinance_survey_gdf.csv", index=False)
 
     
-    return (parsed_geo_df, ground_truth_df, elements_df)
+    return (geo_df, ground_truth_df, elements_df)
 
 if __name__ == "__main__":
     df = import_and_process_data()

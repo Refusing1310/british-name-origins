@@ -82,6 +82,8 @@ def process_kepn_data(csv_folder: Path, output_folder: Path) -> tuple[pd.DataFra
     ground_truth_df = combine_csvs_to_dataframe(csv_folder, separate_header_file=False, ignored_columns=[])
     ground_truth_df.to_csv(output_folder / "ground_truth.csv", index=False)
     elements_df = parse_elements(ground_truth_df.copy())
+    # Sort by frequency in descending order, then by element name in ascending order
+    elements_df = elements_df.sort_values(by=["Frequency", "Element"], ascending=[False, True])
     elements_df.to_csv(output_folder / "elements.csv", index=False)
     return (ground_truth_df, elements_df)
 
@@ -101,53 +103,17 @@ def parse_elements(df: pd.DataFrame) -> pd.DataFrame:
 
     elements: dict[int, ElementRecord] = {}
 
+    # Get non definition starters from file
+    non_definition_starters_path = Path("data/processed/non_definition_starters.csv") 
+    non_definition_starters: list[str] = []
+    if non_definition_starters_path.exists():
+        non_definition_starters = pd.read_csv(Path("data/processed/non_definition_starters.csv"), header=None).iloc[0].tolist()
+    # Parse each row in the dataframe to extract elements and their meanings
     for _, row in df.iterrows():
-        derivations = row["Derivation"]
-        if pd.isna(derivations):
-            continue
-
-        for element in str(derivations).split(";"):
-            element = clean_text(element)
-            if not element:
-                continue
-            meaning = None
-            if " - " not in element:
-                language = "Modern English"
-                Meaning = element
-            else:
-                head, meaning = element.split(" - ", 1)
-                head = clean_text(head) or ""
-                meaning = clean_text(meaning)
-                head_parts = head.split()
-                element = head_parts[0]
-                language = " ".join(head_parts[1:]) if len(head_parts) > 1 else None
-            
-            existing_record = locateElement(elements, element)
-            if existing_record is None:
-                id = len(elements) + 1
-                elements[id] = {
-                    "Id": id,
-                    "Element": element,
-                    "Language": language,
-                    "Meaning": meaning,
-                    "Frequency": 1,
-                }
-            # If element already exists, with a different meaning or language, create a new entry with a unique ID. Otherwise, increment the frequency.
-            elif existing_record["Language"] != language or existing_record["Meaning"] != meaning:
-                id = len(elements) + 1
-                elements[id] = {
-                    "Id": id,
-                    "Element": element,
-                    "Language": language,
-                    "Meaning": meaning,
-                    "Frequency": 1,
-                }
-            else:
-                existing_record["Frequency"] += 1
-                if existing_record["Language"] is None and language is not None:
-                    existing_record["Language"] = language
-                if existing_record["Meaning"] is None and meaning is not None:
-                    existing_record["Meaning"] = meaning
+        parse_row(row, elements, non_definition_starters)
+    # Save updated non_definition_starters to file
+    non_definition_starters_df = pd.DataFrame([non_definition_starters])
+    non_definition_starters_df.to_csv(non_definition_starters_path, index=False, header=False)
 
     rows = []
     for record in elements.values():
@@ -177,3 +143,97 @@ def clean_text(value: str | None) -> str | None:
     if value is None:
         return None
     return value.strip("[]\"' ").strip()
+
+def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition_starters: list[str]) -> None:
+    languages = ["Old English", "Middle English", "Old Norse", "Latin", "French", "Welsh", "Irish", "Scottish Gaelic", "Cornish", "Breton", "German", "Dutch", "Italian", "Spanish", "Portuguese", "Greek", "Arabic", "Hebrew", "C"]
+    derivations = row["Derivation"]
+    if pd.isna(derivations):
+        return # Skip processing if derivations is NaN
+    # Split the derivations into individual elements (sometimes a semicolon is used in a definition which complicates matters)
+    derivations_list = str(derivations).split(";")
+    for i in range(len(derivations_list)):
+        derivation = clean_text(derivations_list[i])
+        if not derivation:
+            continue
+        # Check if the next semicolon is part of a definition and not a separator for multiple derivations
+        if i + 1 < len(derivations_list):
+            next_derivation = clean_text(derivations_list[i + 1])
+            if next_derivation:
+                # If the first word of the next derivation is one of these identifiers, then it's part of the current definition and not a new derivation. Append it to the current derivation.
+                first_word = next_derivation.split()[0].strip("[]\"' ")
+                if not next_derivation.__contains__(" - "):
+                    if first_word not in non_definition_starters:
+                        contains_language = False
+                        for lang in languages:
+                            if lang in next_derivation:
+                                contains_language = True
+                        if not contains_language:
+                            non_definition_starters.append(first_word)
+                    else:
+                        derivation += "; " + next_derivation
+                        derivations_list[i + 1] = ""  # Clear the next derivation since it's been merged with the current one
+        first_word = derivation.split()[0].strip("[]\"' ")
+        match first_word:
+            case "Personal":
+                if row["Etymology"] is None or pd.isna(row["Etymology"]):
+                    # If the etymology is missing, we can't extract the element name, so we skip this derivation.
+                    continue
+                # Personal name is the first two words, the rest is the language
+                meaning = "Personal name"
+                word = row["Etymology"].split()[0].strip("[]\"' ")
+                match word:
+                    # case "probably":
+                    case _:
+                        element = word.strip("'s")
+                        language = get_language_from_derivation(derivation, languages)
+            # case "River-name":
+            # case "Uncertain":
+            # case "Place-name":
+            # case "Obscure":
+            case _:
+                if len(derivation.split(" - ", 1)) < 2:
+                    # Doesn't have a meaning
+                    element = derivation.split()[0] # Get the first word as the element
+                    meaning = None
+                else:
+                    head, meaning = derivation.split(" - ", 1)
+                    head = clean_text(head) or ""
+                    meaning = clean_text(meaning)
+                    head_parts = head.split()
+                    element = head_parts[0]
+                    meaning = None
+        language = get_language_from_derivation(derivation, languages)
+        existing_record = locateElement(elements, element)
+        if existing_record is None:
+            id = len(elements) + 1
+            elements[id] = {
+                "Id": id,
+                "Element": element,
+                "Language": language,
+                "Meaning": meaning,
+                "Frequency": 1,
+            }
+        # If element already exists, with a different meaning or language, create a new entry with a unique ID. Otherwise, increment the frequency.
+        elif existing_record["Language"] != language or existing_record["Meaning"] != meaning:
+            id = len(elements) + 1
+            elements[id] = {
+                "Id": id,
+                "Element": element,
+                "Language": language,
+                "Meaning": meaning,
+                "Frequency": 1,
+            }
+        else:
+            existing_record["Frequency"] += 1
+            if existing_record["Language"] is None and language is not None:
+                existing_record["Language"] = language
+            if existing_record["Meaning"] is None and meaning is not None:
+                existing_record["Meaning"] = meaning
+    
+
+def get_language_from_derivation(derivation: str, languages: list[str]) -> str | None:
+    """Extract the language from the derivation string."""
+    for lang in languages:
+        if lang in derivation:
+            return lang
+    return None

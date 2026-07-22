@@ -145,6 +145,3 @@ def test_parse_elements_uses_etymology_clues_for_obscure_elements():
 
     assert obscure_row["Language"] == "Unknown"
     assert obscure_row["Meaning"] == "Obscure element"
-
-
-    

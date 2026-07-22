@@ -4,14 +4,14 @@ def parse_place_names(geo_df: pd.DataFrame, aliases_file: Path) -> pd.DataFrame:
     """Parse the place names in the GeoDataFrame, splitting them into suffixes, prefix and root."""
     # TODO: replace with better algorithm later, e,g trie or ahocorasick for better performance.
     # Iterate over each row in the GeoDataFrame and parse the place name
-    for index, row in geo_df.iterrows():
-        place_name = row["NAME"]
-        # normalize the place name to lower case for matching
-        place_name_lower = place_name.lower()
-        # remove punctuation and whitespace for matching
-        place_name_lower = ''.join(e for e in place_name_lower if e.isalnum() or e.isspace())
+    # for index, row in geo_df.iterrows():
+    #     place_name = row["NAME"]
+    #     # normalize the place name to lower case for matching
+    #     place_name_lower = place_name.lower()
+    #     # remove punctuation and whitespace for matching
+    #     place_name_lower = ''.join(e for e in place_name_lower if e.isalnum() or e.isspace())
         
-        elements = find_elements(place_name_lower, aliases_file)
+    #     elements = find_elements(place_name_lower, aliases_file)
     return geo_df
 
 def find_elements(place_name: str, aliases_file: Path) -> list[str]:

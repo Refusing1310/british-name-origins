@@ -15,7 +15,7 @@ def import_and_process_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
     Path("data/processed").mkdir(parents=True, exist_ok=True)
 
     # Check if the processed files files already exist for the key english place names data, and if not, create them.
-    if not Path("data/processed/ground_truth.csv").exists():
+    if not Path("data/processed/ground_truth.csv").exists() or not Path("data/processed/elements.csv").exists():
         ground_truth_df, elements_df = process_kepn_data(
             csv_folder=Path("data/raw/kepn/"),
             output_folder=Path("data/processed/"),

@@ -103,4 +103,48 @@ def test_parse_elements_extracts_meaning_from_derivation_and_counts_frequency():
     assert hris_row["Frequency"] == 1
 
 
+def test_parse_elements_preserves_semicolons_inside_meanings_and_still_splits_entries():
+    df = pd.DataFrame(
+        [
+            {
+                "PlaceName": "Bedford",
+                "Etymology": "Uncertain. 'B(i)eda's ford' or perhaps, 'hollow ford'.",
+                "Derivation": "byden Old English - A vessel, a tub, a butt; used topographically of a hollow.; ford Old English - A ford.; Personal name (Old English) Old English - Personal name",
+            }
+        ]
+    )
+
+    result = parse_elements(df)
+
+    byden_row = result.loc[result["Element"] == "byden"].iloc[0]
+    ford_row = result.loc[result["Element"] == "ford"].iloc[0]
+    personal_row = result.loc[result["Element"] == "B(i)eda"].iloc[0]
+
+    assert byden_row["Meaning"] == "A vessel, a tub, a butt; used topographically of a hollow."
+    assert byden_row["Frequency"] == 1
+    assert ford_row["Meaning"] == "A ford."
+    assert ford_row["Frequency"] == 1
+    assert personal_row["Language"] == "Old English"
+    assert personal_row["Meaning"] == "Personal name"
+
+
+def test_parse_elements_uses_etymology_clues_for_obscure_elements():
+    df = pd.DataFrame(
+        [
+            {
+                "PlaceName": "Brampford Speke",
+                "Etymology": "Apparently 'broom ford'. However, evidence shows that the first element was *Brente, an element of obscure origins and meaning. It was held by Richard de Espec ca. 1170.",
+                "Derivation": "Family name Unknown - Family name.; ford Old English - A ford.; Obscure element Unknown - Obscure element",
+            }
+        ]
+    )
+
+    result = parse_elements(df)
+
+    obscure_row = result.loc[result["Element"] == "*Brente"].iloc[0]
+
+    assert obscure_row["Language"] == "Unknown"
+    assert obscure_row["Meaning"] == "Obscure element"
+
+
     

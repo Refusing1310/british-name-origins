@@ -3,13 +3,14 @@ from pathlib import Path
 import pandas as pd
 import geopandas as gpd
 
-from data_processing.process_csvs import combine_csvs_to_dataframe
+from data_processing.process_csvs import combine_csvs_to_dataframe, parse_elements
 from data_processing.process_excel import process_excel_file
 
 
 def test_combine_csvs_to_dataframe_uses_header_and_concatenates_rows():
     df = combine_csvs_to_dataframe(
         csv_folder=Path("data/raw/opname_csv_gb/Data"),
+        separate_header_file=True,
         header_file=Path("data/raw/opname_csv_gb/Doc/OS_Open_Names_Header.csv"),
         ignored_columns= constants.OS_IGNORED_COLUMNS
     )
@@ -67,3 +68,39 @@ def test_process_excel_file_drops_year_columns_when_ignored_columns_are_strings(
     assert "TOWN NAME" in result.columns
     assert "Population" in result.columns
 
+def test_parse_elements_extracts_meaning_from_derivation_and_counts_frequency():
+    df = pd.DataFrame(data=[
+        {
+            "PlaceName": ["Acol"],
+            "Etymology": ["Oak wood"],
+            "Derivation": [
+                "āc Old English - An oak-tree.; holt Old English - A wood. (Probably of a single species.)",
+            ],
+        },
+        {
+            "PlaceName": ["Acrise"],
+            "Etymology": ["Oak brushwood"],
+            "Derivation": [
+                "āc Old English - An oak-tree.; hrīs Old English - Shrubs, brushwood."
+            ]
+        }]
+    )
+
+    result = parse_elements(df)
+    acol_row = result.loc[result["Element"] == "āc"].iloc[0]
+    holt_row = result.loc[result["Element"] == "holt"].iloc[0]
+    hris_row = result.loc[result["Element"] == "hrīs"].iloc[0]
+    print(result)
+    assert list(result.columns) == ["Id", "Element", "Language", "Meaning", "Frequency"]
+    assert acol_row["Language"] == "Old English"
+    assert acol_row["Meaning"] == "An oak-tree."
+    assert acol_row["Frequency"] == 2
+    assert holt_row["Language"] == "Old English"
+    assert holt_row["Meaning"] == "A wood. (Probably of a single species.)"
+    assert holt_row["Frequency"] == 1
+    assert hris_row["Language"] == "Old English"
+    assert hris_row["Meaning"] == "Shrubs, brushwood."
+    assert hris_row["Frequency"] == 1
+
+
+    

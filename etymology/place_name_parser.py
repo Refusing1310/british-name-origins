@@ -1,6 +1,7 @@
 import pandas as pd
+import geopandas as gpd
 from pathlib import Path
-def parse_place_names(geo_df: pd.DataFrame, aliases_file: Path) -> pd.DataFrame:
+def parse_place_names(geo_df: gpd.GeoDataFrame, elements_df: pd.DataFrame, ground_truth_df: pd.DataFrame) -> gpd.GeoDataFrame:
     """Parse the place names in the GeoDataFrame, splitting them into suffixes, prefix and root."""
     # TODO: replace with better algorithm later, e,g trie or ahocorasick for better performance.
     # Iterate over each row in the GeoDataFrame and parse the place name

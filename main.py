@@ -9,7 +9,8 @@ from data_processing.process_csvs import process_kepn_data, save_combined_data
 # from data_processing.process_excel import process_excel_file
 from data_processing.convert_to_gdf import convert_to_geo_dataframe
 from etymology.place_name_parser import parse_place_names
-def import_and_process_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+from data_processing.produce_aliases import build_aliases_csv
+def import_and_process_data() -> gpd.GeoDataFrame:
     """Import and process the data from the raw data files."""
     # Create the processed directory if it doesn't exist
     Path("data/processed").mkdir(parents=True, exist_ok=True)
@@ -74,13 +75,15 @@ def import_and_process_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
     # else:
     #     office_of_national_statistics_df = Path("data/processed/ons.csv")
 
-    # geo_df = parse_place_names(geo_df, Path("data/processed/aliases.csv"))
+    # Create aliases.csv from elements.csv
+    if not Path("data/processed/aliases.csv").exists():
+        # Create aliases.csv from elements.csv
+        aliases_df = build_aliases_csv(elements_df, output_path=Path("data/processed/aliases.csv"))
 
+    geo_df = parse_place_names(geo_df, elements_df, ground_truth_df)
     # Store in csv file to prevent having to reprocess the data every time the script is run.
-    # geo_df.to_csv("data/processed/ordinance_survey_gdf.csv", index=False)
-
-    
-    return (geo_df, ground_truth_df, elements_df)
+    geo_df.to_csv("data/processed/ordinance_survey_gdf.csv", index=False)
+    return geo_df
 
 if __name__ == "__main__":
-    (geo_df, ground_truth_df, elements_df) = import_and_process_data()
+    geo_df = import_and_process_data()

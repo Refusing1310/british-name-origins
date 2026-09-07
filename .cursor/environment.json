@@ -1,5 +1,5 @@
 {
   "name": "british-name-origins",
-  "install": "python -m pip install --upgrade pip && pip install geopandas pandas pytest openpyxl matplotlib powerlaw",
+  "install": "python3 -m pip install --upgrade pip && python3 -m pip install geopandas pandas pytest openpyxl matplotlib powerlaw",
   "terminals": []
 }

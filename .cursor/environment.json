@@ -1,0 +1,17 @@
+{
+  "name": "British Name Origins",
+  "install": "sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-venv && python3 -m venv .venv && . .venv/bin/activate && python -m pip install --upgrade pip && pip install -r requirements-dev.txt",
+  "terminals": [
+    {
+      "name": "streamlit",
+      "command": ".venv/bin/streamlit run app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true",
+      "description": "Streamlit dev server for the British town-name origins map (http://localhost:8501)."
+    }
+  ],
+  "ports": [
+    {
+      "name": "streamlit",
+      "port": 8501
+    }
+  ]
+}

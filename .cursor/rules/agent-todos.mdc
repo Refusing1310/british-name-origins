@@ -1,0 +1,11 @@
+---
+description: When an agent defers work, write an agent-todo file so automations can file issues.
+globs:
+alwaysApply: true
+---
+
+# Agent deferred work → todos
+
+When you leave real follow-up work (out of scope, blocked, or explicitly deferred), add one file under `.cursor/agent-todos/` using that folder's README format. Do not invent speculative todos.
+
+If you hit an ambiguity while implementing a GitHub issue, stop and follow `.cursor/skills/workspace-agent-todo/SKILL.md` (comment questions, `needs-human`, do not guess).

@@ -1,0 +1,51 @@
+---
+alwaysApply: true
+---
+
+# british-name-origins — workspace conventions
+
+## Project Overview
+
+Python research/data project: Ordnance Survey and English place-name data are processed into a GeoDataFrame, place-name elements (roots, suffixes, prefixes) are parsed for etymology, and results are mapped so larger settlements get larger dots coloured by linguistic origin.
+
+Throughout the project, **element** means roots, suffixes, and prefixes.
+
+## Directory Structure
+
+- `main.py` — interactive import/process entrypoint
+- `constants/` — shared column lists and constants
+- `data/raw/` — source datasets (many large/raw trees are gitignored)
+- `data/processed/` — derived CSVs (currently gitignored while unstable)
+- `data_processing/` — CSV/Excel ingest, combine, GeoDataFrame conversion, aliases
+- `etymology/` — place-name parsing
+- `graph_creation/` — mapping / Zipf / plot helpers
+- `database/` — DB-related helpers
+- `scripts/` — one-off utilities
+- `tests/` — pytest suite (`pytest.ini` sets `testpaths = tests`, `pythonpath = .`)
+
+## Tech Stack
+
+- **Language**: Python 3
+- **Core libs**: pandas, geopandas
+- **Tests**: pytest
+- **VCS / CI**: GitHub (`Refusing1310/british-name-origins`), default branch `main`
+
+## Commands
+
+- **Tests**: `pytest`
+- **Single test**: `pytest tests/path/to/test_file.py -k 'name'`
+- **Process data**: `python main.py` (interactive prompts; prefer non-interactive helpers under `data_processing/` in agent work)
+
+## Conventions
+
+- Prefer clear module functions over new packages or frameworks.
+- Keep transforms idempotent where practical: check for existing processed files before rebuilding.
+- Do not commit secrets or giant raw OS Open Names trees.
+- Match existing naming and import style in neighbouring modules.
+- Conventional Commits for git messages (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, …).
+
+## Known Pitfalls
+
+- Local remote may still be named `british-suffixes.git` while the GitHub repo is `british-name-origins` — use `gh repo view` / the GitHub name for automations and issues.
+- `data/processed/*.csv` and large raw OS paths are gitignored; agents must not assume those files are in the clone.
+- `main.py` uses `input()` prompts; automations and non-interactive agents should call library functions directly instead of driving that script.

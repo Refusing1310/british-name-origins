@@ -1,0 +1,13 @@
+---
+description: PR review expectations for this Python data project
+globs:
+alwaysApply: true
+---
+
+When opening or reviewing a pull request in this repository:
+
+1. Self-review the diff before requesting merge: correctness of data transforms, etymology/parsing edge cases, and tests.
+2. Run `pytest` (or the narrowest tests that cover the change) and keep it green.
+3. Never commit secrets, raw Ordnance Survey dumps under `data/raw/opname_csv_gb`, or large regenerable `data/processed/*.csv` outputs unless the PR explicitly needs them and `.gitignore` was updated on purpose.
+4. Prefer editing existing modules under `data_processing/`, `etymology/`, `graph_creation/`, and `constants/` over adding parallel pipelines.
+5. **Sync `main` before marking ready.** Before converting a draft PR to ready for review, `git fetch origin main`, merge `origin/main` into the branch (prefer merge over rebase so you do not need a force-push), resolve conflicts, push, and only then mark the PR ready. Do not mark ready while the branch is behind `origin/main`.

@@ -1,0 +1,4 @@
+{
+  "terminalAllowlist": ["git", "gh", "python", "python3", "pip", "pip3", "pytest", "uv"],
+  "mcpAllowlist": []
+}

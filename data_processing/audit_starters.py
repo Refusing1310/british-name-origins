@@ -65,7 +65,7 @@ def audit_starters(rows: pd.DataFrame, starters: set[str]) -> list[dict]:
             derivation = clean_text(segment)
             if not derivation:
                 continue
-            word = derivation.split()[0].strip("()[]\\\"' ").lower()
+            word = derivation.split()[0].strip("()[]\"' ").lower()
             if word not in starters:
                 continue
             language = get_language_from_derivation(derivation, KEPN_LANGUAGES)

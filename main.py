@@ -7,7 +7,7 @@ import pandas as pd
 import constants.constants as constants
 from data_processing.process_csvs import process_kepn_data, save_combined_data
 # from data_processing.process_excel import process_excel_file
-from data_processing.convert_to_gdf import convert_to_geo_dataframe
+from data_processing.convert_to_gdf import convert_to_geo_dataframe, load_processed_geo_dataframe
 from etymology.place_name_parser import parse_place_names
 from data_processing.produce_aliases import build_aliases_csv
 def import_and_process_data() -> gpd.GeoDataFrame:
@@ -49,7 +49,7 @@ def import_and_process_data() -> gpd.GeoDataFrame:
     # Check if the geo dataframe already exists, and if not, create it.
     if Path("data/processed/ordinance_survey_gdf.csv").exists():   
         # Load the existing GeoDataFrame from the CSV file
-        geo_df = gpd.read_file("data/processed/ordinance_survey_gdf.csv")
+        geo_df = load_processed_geo_dataframe(Path("data/processed/ordinance_survey_gdf.csv"))
     # Otherwise, process the data and create the GeoDataFrame
     else:
         # Check if files already exist for the ordinance survey data, and if not, create them.

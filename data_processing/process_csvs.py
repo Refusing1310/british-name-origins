@@ -266,18 +266,16 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
                 # TODO - again very complicated and has many different cases
                 meaning = derivation
                 element = clean_text(row["PlaceName"])
-            case "land":
-                # TODO
-                meaning = derivation
-                element = clean_text(row["PlaceName"])
-            case "water":
-                # TODO
-                meaning = derivation
-                element = clean_text(row["PlaceName"])
-            case "mill":
-                # TODO
-                meaning = derivation
-                element = clean_text(row["PlaceName"])
+            case "land" | "water" | "mill":
+                # These are genuine elements when the KEPN fragment is language-tagged.
+                # Keep the original place-name special case for untagged fragments.
+                if get_language_from_derivation(derivation, languages) is not None:
+                    head, separator, definition = derivation.partition(" - ")
+                    element = head.split()[0]
+                    meaning = clean_text(definition) if separator else None
+                else:
+                    meaning = derivation
+                    element = clean_text(row["PlaceName"])
             case "church":
                 # TODO
                 meaning = derivation

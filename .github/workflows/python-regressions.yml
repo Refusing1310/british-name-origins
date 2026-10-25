@@ -21,6 +21,5 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install pandas==3.0.5 geopandas==1.1.4 openpyxl==3.1.5 pytest==9.1.1
-      - name: Run portable parser and GeoDataFrame tests
-        # OS Open Names fixture is not bundled; all other tests use fixtures or bundled KEPN.
-        run: python -m pytest -q tests -k "not combine_csvs_to_dataframe_uses_header_and_concatenates_rows"
+      - name: Run complete Python regression suite (including bundled OS fixture)
+        run: python -m pytest -q tests

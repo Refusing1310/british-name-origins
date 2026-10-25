@@ -284,3 +284,35 @@ def test_real_kepn_land_water_mill_survive_parsing(isolated_parser_env):
         ("mill", "Modern English"),
     ]:
         assert not result[(result["Element"] == element) & (result["Language"] == language)].empty
+
+
+def test_language_tagged_starter_collision_does_not_drop_hall(isolated_parser_env):
+    # An unrecognized "Hall D" introduces a continuation marker, but a later
+    # tagged hall root is still a real Old English element.
+    rows = pd.DataFrame(
+        [
+            {"PlaceName": "Starter", "Etymology": "", "Derivation":
+                "tūn Old English - An enclosure; Hall D"},
+            {"PlaceName": "Hall Example", "Etymology": "", "Derivation":
+                "hall Old English - A slope, a hill."},
+        ]
+    )
+    result = parse_elements(rows)
+    hall = result[(result["Element"] == "hall") & (result["Language"] == "Old English")]
+    assert not hall.empty
+    assert "A slope, a hill." in hall["Meaning"].tolist()
+
+
+def test_bundled_kepn_recognizes_tagged_starters(isolated_parser_env):
+    # Simulate a persisted continuation cache from an earlier full run.
+    Path("data/processed").mkdir(parents=True, exist_ok=True)
+    Path("data/processed/non_derivation_starters.csv").write_text("in,an,hall,le\\n")
+
+    kepn = Path(__file__).resolve().parents[1] / "data" / "raw" / "kepn"
+    rows = combine_csvs_to_dataframe(kepn, separate_header_file=False, ignored_columns=[])
+    examples = rows[rows["PlaceName"].isin(["Landbeach", "Treneglos"])]
+    assert set(examples["PlaceName"]) == {"Landbeach", "Treneglos"}
+
+    result = parse_elements(examples)
+    for element, lang in [("in", "Old English"), ("an", "C")]:
+        assert not result[(result["Element"] == element) & (result["Language"] == lang)].empty

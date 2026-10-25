@@ -8,7 +8,7 @@ from data_processing.audit_starters import audit_starters, generate_starters, re
 
 def test_read_starters_accepts_single_csv_row(tmp_path):
     file = tmp_path / "starters.csv"
-    file.write_text("hall,an,le,,In\\n", encoding="utf-8")
+    file.write_text("hall,an,le,,In\n", encoding="utf-8")
     assert read_starters(file) == {"hall", "an", "le", "in"}
 
 

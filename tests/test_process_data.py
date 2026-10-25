@@ -18,9 +18,9 @@ def isolated_parser_env(tmp_path, monkeypatch):
 
 def test_combine_csvs_to_dataframe_uses_header_and_concatenates_rows():
     df = combine_csvs_to_dataframe(
-        csv_folder=Path("data/raw/opname_csv_gb/Data"),
+        csv_folder=Path(__file__).resolve().parent / "data" / "raw" / "opname_csv_gb" / "Data",
         separate_header_file=True,
-        header_file=Path("data/raw/opname_csv_gb/Doc/OS_Open_Names_Header.csv"),
+        header_file=Path(__file__).resolve().parent / "data" / "raw" / "opname_csv_gb" / "Doc" / "OS_Open_Names_Header.csv",
         ignored_columns= constants.OS_IGNORED_COLUMNS
     )
 

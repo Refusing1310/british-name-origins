@@ -147,10 +147,11 @@ def test_parse_elements_uses_etymology_clues_for_obscure_elements():
 
     result = parse_elements(df)
     print(result)
-    obscure_row = result.loc[result["Element"] == "*Brente"].iloc[0]
+    obscure_row = result.loc[result["Element"] == "brente"].iloc[0]
 
     assert obscure_row["Language"] == "Unknown"
     assert obscure_row["Meaning"] == "Obscure element"
+    assert bool(obscure_row["Reconstructed"]) is True
 
 
 def test_parse_elements_merges_identical_rows_even_after_a_different_same_name_entry(isolated_parser_env):
@@ -216,6 +217,17 @@ def test_parse_elements_keeps_current_derivation_when_a_later_fragment_is_specia
     assert cumb_row["Language"] == "Old English"
     assert weg_row["Meaning"] == "A road."
     assert weg_row["Frequency"] == 1
+
+def test_obscure_element_without_attested_name_falls_back_to_place(isolated_parser_env):
+    df = pd.DataFrame(
+        [{"PlaceName": "Testham", "Etymology": "Origin unclear.",
+          "Derivation": "Obscure element Unknown - Obscure element"}]
+    )
+    result = parse_elements(df)
+    row = result.loc[result["Element"] == "testham"].iloc[0]
+    assert row["Language"] == "Unknown"
+    assert row["Meaning"] == "Obscure element"
+    assert bool(row["Reconstructed"]) is False
 
 
 @pytest.mark.parametrize(

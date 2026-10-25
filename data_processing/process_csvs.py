@@ -242,8 +242,12 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
                 if not element:
                     element = row["PlaceName"]
             case "obscure":
-                meaning = row["Etymology"]
-                element = clean_text(row["PlaceName"])
+                meaning = clean_text(derivation.split(" - ", 1)[1]) if " - " in derivation else None
+                element = ""
+                if row["Etymology"] and not pd.isna(row["Etymology"]):
+                    element = get_name_from_string(row["Etymology"])
+                if not element:
+                    element = clean_text(row["PlaceName"])
             case "saint's" | "saint":
                 meaning = derivation
                 # Find word St or Saint in etymology or place name and get the next word as the element.

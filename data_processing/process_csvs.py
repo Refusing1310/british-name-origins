@@ -324,7 +324,7 @@ def get_language_from_derivation(derivation: str, languages: list[str]) -> str |
         # KEPN's one-letter code C must be a whole token: a leading C in
         # Caundle/Coton/Canford (or Celtic) is not a language annotation.
         if lang == "C":
-            if re.search(r"(?<!\\w)C(?!\\w)", derivation):
+            if re.search(r"(?<!\w)C(?!\w)", derivation):
                 return lang
         elif lang in derivation:
             return lang

@@ -3,8 +3,13 @@ type: agent-todo
 title: Restore alias CSV generation or stop calling the stub
 priority: medium
 source: scan-vulnerabilities automation
-status: open
+status: in-progress
 ---
+
+## Tracking
+
+- GitHub issue: #27
+- Proposed implementation: draft PR (source-preserving aliases only; further historical spelling rules remain out of scope).
 
 ## What
 

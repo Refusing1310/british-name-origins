@@ -37,7 +37,9 @@ def import_and_process_data() -> gpd.GeoDataFrame:
         #     Path("data/processed/ons.csv").unlink()
 
     # Check if the processed files files already exist for the key english place names data, and if not, create them.
-    if not Path("data/processed/ground_truth.csv").exists() or not Path("data/processed/elements.csv").exists():
+    rebuild_elements = (not Path("data/processed/ground_truth.csv").exists()
+                        or not Path("data/processed/elements.csv").exists())
+    if rebuild_elements:
         ground_truth_df, elements_df = process_kepn_data(
             csv_folder=Path("data/raw/kepn/"),
             output_folder=Path("data/processed/"),
@@ -76,7 +78,9 @@ def import_and_process_data() -> gpd.GeoDataFrame:
     #     office_of_national_statistics_df = Path("data/processed/ons.csv")
 
     # Create aliases.csv from elements.csv
-    if not Path("data/processed/aliases.csv").exists():
+    # Aliases must be rebuilt whenever their element source is rebuilt, even
+    # if a previous run left an existing (now stale) aliases.csv behind.
+    if rebuild_elements or not Path("data/processed/aliases.csv").exists():
         # Create aliases.csv from elements.csv
         aliases_df = build_aliases_csv(elements_df, output_path=Path("data/processed/aliases.csv"))
 

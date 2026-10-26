@@ -53,7 +53,10 @@ def test_source_lineage_retains_homonymous_places_and_every_element_occurrence(
 
     assert elements.loc[elements["Element"] == "an", "Language"].tolist() == ["C"]
     assert elements.loc[elements["Element"] == "eccles", "Language"].tolist() == ["Celtic"]
-    assert pd.read_csv(processed / "ground_truth.csv").equals(ground_truth)
+    # Round-tripping CSV preserves values but may infer different string dtypes.
+    pd.testing.assert_frame_equal(
+        pd.read_csv(processed / "ground_truth.csv"), ground_truth, check_dtype=False
+    )
     assert set(pd.read_csv(processed / "elements.csv")["Id"]) == set(links["ElementId"])
 
 

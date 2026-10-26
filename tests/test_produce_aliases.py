@@ -56,3 +56,43 @@ def test_missing_element_column_is_rejected_without_creating_output(tmp_path):
     with pytest.raises(ValueError, match="Element"):
         build_aliases_csv(pd.DataFrame({"Meaning": ["A hill"]}), path)
     assert not path.exists()
+
+
+def test_pipeline_rebuilds_stale_aliases_when_elements_are_regenerated(
+    tmp_path, monkeypatch
+):
+    import main
+
+    monkeypatch.chdir(tmp_path)
+    processed = tmp_path / "data" / "processed"
+    processed.mkdir(parents=True)
+    old_aliases = processed / "aliases.csv"
+    old_aliases.write_text(
+        "element,alias,alias_type,rule\\nstale,stale,original,identity\\n",
+        encoding="utf-8",
+    )
+
+    answers = iter(["n", "n"])
+    monkeypatch.setattr("builtins.input", lambda _prompt: next(answers))
+    monkeypatch.setattr(
+        main, "process_kepn_data",
+        lambda **_kwargs: (
+            pd.DataFrame({"PlaceName": ["Ham"], "Derivation": ["ham Old English"]}),
+            pd.DataFrame({"Element": ["ham"]}),
+        ),
+    )
+    monkeypatch.setattr(
+        main, "save_combined_data", lambda **_kwargs: pd.DataFrame({"NAME": ["Ham"]})
+    )
+    monkeypatch.setattr(
+        main, "convert_to_geo_dataframe", lambda data: data
+    )
+    monkeypatch.setattr(
+        main, "parse_place_names", lambda geo_df, _elements, _truth: geo_df
+    )
+
+    main.import_and_process_data()
+
+    actual = pd.read_csv(old_aliases)
+    assert actual["element"].tolist() == ["ham"]
+    assert actual["alias"].tolist() == ["ham"]

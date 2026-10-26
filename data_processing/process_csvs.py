@@ -185,7 +185,7 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
         i += 1
         if not derivation:
             continue
-        current_first_word = derivation.split()[0].strip("()[]\\\"' ")
+        current_first_word = derivation.split()[0].strip("()[]\"' ")
         if (current_first_word.lower() in non_definition_starters
                 and get_language_from_derivation(derivation, languages) is None):
             # Only skip an untagged continuation, not a genuine KEPN root.
@@ -198,7 +198,7 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
             if not next_derivation:
                 i += 1
                 continue
-            next_first_word = next_derivation.split()[0].strip("()[]\\\"' ").lower()
+            next_first_word = next_derivation.split()[0].strip("()[]\"' ").lower()
             contains_language = get_language_from_derivation(next_derivation, languages) is not None
             if next_first_word in non_definition_starters and not contains_language:
                 derivation += "; " + next_derivation

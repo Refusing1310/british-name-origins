@@ -68,7 +68,7 @@ def test_pipeline_rebuilds_stale_aliases_when_elements_are_regenerated(
     processed.mkdir(parents=True)
     old_aliases = processed / "aliases.csv"
     old_aliases.write_text(
-        "element,alias,alias_type,rule\\nstale,stale,original,identity\\n",
+        "element,alias,alias_type,rule\nstale,stale,original,identity\n",
         encoding="utf-8",
     )
 

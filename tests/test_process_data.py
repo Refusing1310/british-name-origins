@@ -363,3 +363,61 @@ def test_c_language_and_celtic_label_remain_distinct(isolated_parser_env):
     result = parse_elements(rows)
     assert result.loc[result["Element"] == "an"].iloc[0]["Language"] == "C"
     assert result.loc[result["Element"] == "eclẹ̄si̥ā"].iloc[0]["Language"] == "Celtic"
+
+
+def test_consumed_semicolon_meaning_is_not_reparsed_as_an_element(isolated_parser_env):
+    rows = pd.DataFrame([{
+        "PlaceName": "Example",
+        "Etymology": "",
+        "Derivation": (
+            "byden Old English - A vessel; used topographically of a hollow.; "
+            "ford Old English - A ford."
+        ),
+    }])
+
+    result = parse_elements(rows)
+
+    assert set(result["Element"]) == {"byden", "ford"}
+    assert result.loc[result["Element"] == "byden", "Meaning"].iloc[0] == (
+        "A vessel; used topographically of a hollow."
+    )
+    assert result.loc[result["Element"] == "ford", "Meaning"].iloc[0] == "A ford."
+    assert result["Frequency"].tolist() == [1, 1]
+
+
+def test_consumed_untagged_starter_cannot_duplicate_a_real_tagged_root(isolated_parser_env):
+    rows = pd.DataFrame([{
+        "PlaceName": "Example",
+        "Etymology": "",
+        "Derivation": (
+            "tūn Old English - An enclosure; Hall D; "
+            "hall Old English - A hill."
+        ),
+    }])
+
+    result = parse_elements(rows)
+
+    assert set(result["Element"]) == {"tūn", "hall"}
+    assert result.loc[result["Element"] == "tūn", "Meaning"].iloc[0] == (
+        "An enclosure; Hall D"
+    )
+    hall = result.loc[result["Element"] == "hall"]
+    assert len(hall) == 1
+    assert hall.iloc[0]["Language"] == "Old English"
+    assert hall.iloc[0]["Frequency"] == 1
+
+
+def test_empty_semicolon_fragments_do_not_stall_or_create_elements(isolated_parser_env):
+    rows = pd.DataFrame([{
+        "PlaceName": "Example",
+        "Etymology": "",
+        "Derivation": (
+            "; tūn Old English - An enclosure; ; ; "
+            "ford Old English - A ford.; ;"
+        ),
+    }])
+
+    result = parse_elements(rows)
+
+    assert set(result["Element"]) == {"tūn", "ford"}
+    assert set(result["Frequency"]) == {1}

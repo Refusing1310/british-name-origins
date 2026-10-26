@@ -24,7 +24,8 @@ def combine_csvs_to_dataframe(
     csv_folder: Path,
     separate_header_file: bool,
     ignored_columns: list[str],
-    header_file: Path | None = None
+    header_file: Path | None = None,
+    include_kepn_source: bool = False,
 ) -> pd.DataFrame:
     """Combine all CSV files in the provided folder into a single dataframe."""
     if separate_header_file:
@@ -47,6 +48,14 @@ def combine_csvs_to_dataframe(
         frames = [pd.read_csv(path, header=None, names=columns, dtype=str) for path in csv_files]
     else:
         frames = [pd.read_csv(path, header=0, names=columns, dtype=str) for path in csv_files]
+    if include_kepn_source:
+        # Source-local record ordinals survive normal CSV quoting and blank
+        # lines, unlike a guessed physical line number. Paths are relative.
+        for path, frame in zip(csv_files, frames):
+            if {"KEPNSourceFile", "KEPNRecordNumber"} & set(frame.columns):
+                raise ValueError("KEPN source columns already exist in input")
+            frame["KEPNSourceFile"] = path.name
+            frame["KEPNRecordNumber"] = range(1, len(frame) + 1)
     return pd.concat(frames, ignore_index=True)
 
 
@@ -84,9 +93,18 @@ def clean_dataframe(df: pd.DataFrame, ignored_columns: list[str]) -> pd.DataFram
 
 def process_kepn_data(csv_folder: Path, output_folder: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Read from the CSV folder and save the processed data to a CSV file."""
-    ground_truth_df = combine_csvs_to_dataframe(csv_folder, separate_header_file=False, ignored_columns=[])
+    output_folder.mkdir(parents=True, exist_ok=True)
+    ground_truth_df = combine_csvs_to_dataframe(
+        csv_folder, separate_header_file=False, ignored_columns=[],
+        include_kepn_source=True,
+    )
     ground_truth_df.to_csv(output_folder / "ground_truth.csv", index=False)
-    elements_df = parse_elements(ground_truth_df.copy())
+    source_links: list[dict] = []
+    elements_df = parse_elements(ground_truth_df.copy(), source_links=source_links)
+    pd.DataFrame(source_links, columns=[
+        "GroundTruthRow", "KEPNSourceFile", "KEPNRecordNumber",
+        "ElementId", "OccurrenceInRow",
+    ]).to_csv(output_folder / "element_sources.csv", index=False)
     # Sort by frequency in descending order, then by element name in ascending order
     elements_df = elements_df.sort_values(by=["Frequency", "Element"], ascending=[False, True])
     elements_df.to_csv(output_folder / "elements.csv", index=False)
@@ -102,7 +120,9 @@ class ElementRecord(TypedDict):
     Frequency: int
     Reconstructed: bool
     
-def parse_elements(df: pd.DataFrame) -> pd.DataFrame:
+def parse_elements(
+    df: pd.DataFrame, *, source_links: list[dict] | None = None
+) -> pd.DataFrame:
     """Parse the elements (roots, suffixes, prefixes) from the KEPN dataset."""
     if "Derivation" not in df.columns:
         raise ValueError("The 'Derivation' column is missing from the dataframe.")
@@ -118,8 +138,18 @@ def parse_elements(df: pd.DataFrame) -> pd.DataFrame:
         except pd.errors.EmptyDataError:
             non_derivation_starters = []
     # Parse each row in the dataframe to extract elements and their meanings
-    for _, row in df.iterrows():
-        parse_row(row, elements, non_derivation_starters)
+    for source_row, (_, row) in enumerate(df.iterrows()):
+        observed_ids: list[int] | None = [] if source_links is not None else None
+        parse_row(row, elements, non_derivation_starters, observed_ids=observed_ids)
+        if source_links is not None and observed_ids is not None:
+            for occurrence, element_id in enumerate(observed_ids, start=1):
+                source_links.append({
+                    "GroundTruthRow": source_row,
+                    "KEPNSourceFile": row.get("KEPNSourceFile"),
+                    "KEPNRecordNumber": row.get("KEPNRecordNumber"),
+                    "ElementId": element_id,
+                    "OccurrenceInRow": occurrence,
+                })
     # Save updated non_derivation_starters to file
     non_derivation_starters_df = pd.DataFrame([non_derivation_starters])
     non_derivation_starters_df.to_csv(non_derivation_starters_path, index=False, header=False)
@@ -169,7 +199,13 @@ def clean_text(value: str | None) -> str | None:
         return None
     return value.strip("[]\"' ").strip()
 
-def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition_starters: list[str]) -> None:
+def parse_row(
+    row: pd.Series,
+    elements: dict[int, ElementRecord],
+    non_definition_starters: list[str],
+    *,
+    observed_ids: list[int] | None = None,
+) -> None:
     languages = KEPN_LANGUAGES
     special_cases = ["personal", "river-name", "obscure", "family-name", "tribal", "tribal-name", "place", "place-name", "family", "saint's", "saint", "water", "land", "mill", "church"]
     derivations = row["Derivation"]
@@ -306,9 +342,17 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
         # If element contains a slash, then it represents two different spellings of the same element. Split it into two elements and add them both to the dict.
         if element.__contains__("/"):
             for sub_element in element.split("/"):
-                add_element_to_dict(elements, sub_element, language, meaning, reconstructed)
+                element_id = add_element_to_dict(
+                    elements, sub_element, language, meaning, reconstructed
+                )
+                if observed_ids is not None:
+                    observed_ids.append(element_id)
         else:
-            add_element_to_dict(elements, element, language, meaning, reconstructed)
+            element_id = add_element_to_dict(
+                elements, element, language, meaning, reconstructed
+            )
+            if observed_ids is not None:
+                observed_ids.append(element_id)
     
 
 def get_language_from_derivation(derivation: str, languages: list[str]) -> str | None:
@@ -350,32 +394,31 @@ def normalise_element(element: str) -> str:
     # Remove punctuation and 's, then convert to lowercase and strip whitespace
     return element.replace("'s", "").translate(str.maketrans("", "", ".,;:!?()[]{}\"'")).lower().strip()
 
-def add_element_to_dict(elements: dict, element: str, language: str | None, meaning: str | None, reconstructed: bool) -> None:
-    """Add the element to the elements dict, or update the frequency if it already exists."""
-    existing_record = locateElement(elements, element, language, meaning, reconstructed)
-    if existing_record is None:
-            id = len(elements) + 1
-            elements[id] = {
-                "Id": id,
-                "Element": element,
-                "Language": language,
-                "Meaning": meaning,
-                "Frequency": 1,
-                "Reconstructed": reconstructed,
-            }
-    # If element already exists, with a different meaning or language, create a new entry with a unique ID. Otherwise, increment the frequency.
-    elif existing_record["Language"] != language or existing_record["Meaning"] != meaning:
-        id = len(elements) + 1
-        elements[id] = {
-            "Id": id,
-            "Element": element,
-            "Language": language,
-            "Meaning": meaning,
-            "Frequency": 1,
-            "Reconstructed": reconstructed,
-        }
-    else:
+def add_element_to_dict(
+    elements: dict[int, ElementRecord],
+    element: str,
+    language: str | None,
+    meaning: str | None,
+    reconstructed: bool,
+) -> int:
+    """Return the aggregate element ID to link each source occurrence."""
+    existing_record = locateElement(
+        elements, element, language, meaning, reconstructed
+    )
+    if existing_record is not None:
         existing_record["Frequency"] += 1
+        return existing_record["Id"]
+
+    element_id = len(elements) + 1
+    elements[element_id] = {
+        "Id": element_id,
+        "Element": element,
+        "Language": language,
+        "Meaning": meaning,
+        "Frequency": 1,
+        "Reconstructed": reconstructed,
+    }
+    return element_id
 
 def find_name_using_previous(previous_words: list[str], texts: list[str]) -> str:
     """Find the name from the previous word in the texts."""

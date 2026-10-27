@@ -36,6 +36,7 @@ def _compile_aliases(aliases_df: pd.DataFrame, elements_df: pd.DataFrame) -> dic
 
     languages: dict[str, set[str]] = defaultdict(set)
     ids: dict[str, set[int]] = defaultdict(set)
+    source_records: dict[str, dict[int, dict]] = defaultdict(dict)
     for row in elements_df.itertuples(index=False):
         value = getattr(row, "Element")
         if pd.isna(value) or not str(value).strip():
@@ -49,7 +50,20 @@ def _compile_aliases(aliases_df: pd.DataFrame, elements_df: pd.DataFrame) -> dic
         if "Id" in elements_df.columns:
             source_id = getattr(row, "Id")
             if pd.notna(source_id):
-                ids[element].add(int(source_id))
+                source_id = int(source_id)
+                ids[element].add(source_id)
+                language = getattr(row, "Language") if "Language" in elements_df.columns else None
+                language = str(language).strip() if pd.notna(language) and str(language).strip() else None
+                reconstructed = getattr(row, "Reconstructed") if "Reconstructed" in elements_df.columns else None
+                reconstructed = bool(reconstructed) if pd.notna(reconstructed) else None
+                record = {
+                    "id": source_id,
+                    "language": language,
+                    "reconstructed": reconstructed,
+                }
+                if source_id in source_records[element] and source_records[element][source_id] != record:
+                    raise ValueError(f"Conflicting element source ID: {source_id}")
+                source_records[element][source_id] = record
 
     trie: dict = {}
     for row in aliases_df.itertuples(index=False):
@@ -59,13 +73,22 @@ def _compile_aliases(aliases_df: pd.DataFrame, elements_df: pd.DataFrame) -> dic
             continue
         if element not in languages:
             raise ValueError(f"Alias references unknown source element: {element!r}")
+        # Current alias generation permits only exact source spellings and
+        # NFC-casefold transforms; an unrelated alias must not silently create
+        # a fabricated candidate even if its element name still exists.
+        if alias != _normalise(element):
+            raise ValueError(f"Alias spelling is not source-preserving: {element!r} -> {alias!r}")
         node = trie
         for character in alias:
             node = node.setdefault(character, {})
         node.setdefault(_TERMINAL, set()).add((alias, element))
 
     evidence = {
-        element: {"language_options": sorted(options), "source_ids": sorted(ids[element])}
+        element: {
+            "language_options": sorted(options),
+            "source_ids": sorted(ids[element]),
+            "source_records": [source_records[element][key] for key in sorted(source_records[element])],
+        }
         for element, options in languages.items()
     }
     return {"trie": trie, "evidence": evidence}

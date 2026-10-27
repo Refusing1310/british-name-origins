@@ -40,6 +40,10 @@ def test_matches_compound_suffixes_and_preserves_evidence_without_origin_assignm
         "element": "ham", "matched_alias": "ham", "start": 7, "end": 10,
         "position": "suffix", "language_options": ["Old English", "Old Norse"],
         "source_ids": [1, 2],
+        "source_records": [
+            {"id": 1, "language": "Old English", "reconstructed": None},
+            {"id": 2, "language": "Old Norse", "reconstructed": None},
+        ],
     }
     assert result.iloc[0]["KEPNNameMatches"] == 2
     assert result.iloc[0]["ElementMatchStatus"] == "unverified_candidates"
@@ -49,6 +53,9 @@ def test_matches_compound_suffixes_and_preserves_evidence_without_origin_assignm
     assert result.iloc[3]["ElementCandidateCount"] == 0  # no embedded 'an'
     assert result.iloc[4]["ElementMatchStatus"] == "missing_name"
     assert result.iloc[5]["ElementMatchStatus"] == "missing_name"
+    assert eccles[0]["source_records"] == [
+        {"id": 5, "language": "Celtic", "reconstructed": None}
+    ]
     assert result.crs == geo.crs
     assert list(result.geometry) == list(geo.geometry)
     assert result["VALUE"].tolist() == geo["VALUE"].tolist()
@@ -98,3 +105,30 @@ def test_no_duplicates_from_original_and_normalized_aliases(tmp_path):
     matches = json.loads(result.iloc[0]["ElementCandidates"])
     assert sorted(m["element"] for m in matches) == ["Ham", "ham"]
     assert result.iloc[0]["ElementCandidateCount"] == 2
+
+
+
+def test_stale_alias_with_known_element_but_fabricated_spelling_is_rejected(tmp_path):
+    elements, path = _data(tmp_path)
+    # A former alias row may still point to a valid element while its spelling
+    # is unrelated. That is not permitted by the current conservative policy.
+    pd.DataFrame({"element": ["ham"], "alias": ["village"]}).to_csv(path, index=False)
+    with pytest.raises(ValueError, match="not source-preserving"):
+        parse_place_names(_geo(["Village"]), elements, pd.DataFrame(), aliases_file=path)
+
+
+def test_pairing_preserves_reconstructed_and_language_for_each_source_id(tmp_path):
+    elements = pd.DataFrame({
+        "Id": [71, 12],
+        "Element": ["ham", "ham"],
+        "Language": ["Old English", "Old Norse"],
+        "Reconstructed": [True, False],
+    })
+    path = tmp_path / "aliases.csv"
+    build_aliases_csv(elements, path)
+    result = parse_place_names(_geo(["Ham"]), elements, pd.DataFrame(), aliases_file=path)
+    records = json.loads(result.iloc[0]["ElementCandidates"])[0]["source_records"]
+    assert records == [
+        {"id": 12, "language": "Old Norse", "reconstructed": False},
+        {"id": 71, "language": "Old English", "reconstructed": True},
+    ]

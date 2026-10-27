@@ -4,6 +4,10 @@ from typing import TypedDict
 import pandas as pd
 
 
+# KEPN labels encountered in the source derivation text. Shared with read-only audits.
+KEPN_LANGUAGES = ["Modern English", "Old English", "Middle English", "Old Norse", "Latin", "French", "Welsh", "Irish", "Scottish Gaelic", "Cornish", "Breton", "German", "Dutch", "Italian", "Spanish", "Portuguese", "Greek", "Arabic", "Hebrew", "Celtic", "C", "Unknown", "Other"]
+
+
 # Process and clean the data from the csv files and save it to a new csv file
 # in the data/processed directory.
 
@@ -166,7 +170,7 @@ def clean_text(value: str | None) -> str | None:
     return value.strip("[]\"' ").strip()
 
 def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition_starters: list[str]) -> None:
-    languages = ["Modern English", "Old English", "Middle English", "Old Norse", "Latin", "French", "Welsh", "Irish", "Scottish Gaelic", "Cornish", "Breton", "German", "Dutch", "Italian", "Spanish", "Portuguese", "Greek", "Arabic", "Hebrew", "Celtic", "C", "Unknown", "Other"]
+    languages = KEPN_LANGUAGES
     special_cases = ["personal", "river-name", "obscure", "family-name", "tribal", "tribal-name", "place", "place-name", "family", "saint's", "saint", "water", "land", "mill", "church"]
     derivations = row["Derivation"]
     if pd.isna(derivations):

@@ -4,7 +4,7 @@ import pandas as pd
 import geopandas as gpd
 import pytest
 
-from data_processing.process_csvs import combine_csvs_to_dataframe, parse_elements
+from data_processing.process_csvs import combine_csvs_to_dataframe, get_language_from_derivation, parse_elements
 from data_processing.process_excel import process_excel_file
 
 
@@ -316,3 +316,50 @@ def test_bundled_kepn_recognizes_tagged_starters(isolated_parser_env):
     result = parse_elements(examples)
     for element, lang in [("in", "Old English"), ("an", "C")]:
         assert not result[(result["Element"] == element) & (result["Language"] == lang)].empty
+
+
+# Issue #15: whole-token KEPN "C" versus capitalized place-name fragments.
+@pytest.mark.parametrize(
+    "fragment,expected",
+    [
+        ("Caundle", None),
+        ("Coton", None),
+        ("Canford", None),
+        ("Church", None),
+        ("eclẹ̄si̥ā Celtic", "Celtic"),
+        ("an C", "C"),
+        ("lann C", "C"),
+        ("ros C", "C"),
+        ("an (C)", "C"),
+        ("tūn Old English - an enclosure", "Old English"),
+    ],
+)
+def test_kepn_language_code_c_is_a_whole_token(fragment, expected):
+    languages = ["Old English", "Celtic", "C"]
+    assert get_language_from_derivation(fragment, languages) == expected
+
+
+@pytest.mark.parametrize("name,fragment,element", [
+    ("Bishop's Caundle", "Caundle", "caundle"),
+    ("Coton End", "Coton", "coton"),
+    ("Canford Park", "Canford", "canford"),
+])
+def test_place_name_fragments_do_not_get_c_language(
+    isolated_parser_env, name, fragment, element
+):
+    rows = pd.DataFrame([{"PlaceName": name, "Etymology": "", "Derivation": fragment}])
+    result = parse_elements(rows)
+    record = result.loc[result["Element"] == element].iloc[0]
+    assert pd.isna(record["Language"])
+
+
+def test_c_language_and_celtic_label_remain_distinct(isolated_parser_env):
+    # Preserve a standalone KEPN code while explicitly retaining the supplied
+    # "Celtic" label rather than silently dropping these existing source rows.
+    rows = pd.DataFrame([
+        {"PlaceName": "Example C", "Etymology": "", "Derivation": "an C"},
+        {"PlaceName": "Example Celtic", "Etymology": "", "Derivation": "eclẹ̄si̥ā Celtic"},
+    ])
+    result = parse_elements(rows)
+    assert result.loc[result["Element"] == "an"].iloc[0]["Language"] == "C"
+    assert result.loc[result["Element"] == "eclẹ̄si̥ā"].iloc[0]["Language"] == "Celtic"

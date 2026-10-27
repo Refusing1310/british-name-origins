@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from typing import TypedDict
 import pandas as pd
 
@@ -165,7 +166,7 @@ def clean_text(value: str | None) -> str | None:
     return value.strip("[]\"' ").strip()
 
 def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition_starters: list[str]) -> None:
-    languages = ["Modern English", "Old English", "Middle English", "Old Norse", "Latin", "French", "Welsh", "Irish", "Scottish Gaelic", "Cornish", "Breton", "German", "Dutch", "Italian", "Spanish", "Portuguese", "Greek", "Arabic", "Hebrew", "C", "Unknown", "Other"]
+    languages = ["Modern English", "Old English", "Middle English", "Old Norse", "Latin", "French", "Welsh", "Irish", "Scottish Gaelic", "Cornish", "Breton", "German", "Dutch", "Italian", "Spanish", "Portuguese", "Greek", "Arabic", "Hebrew", "Celtic", "C", "Unknown", "Other"]
     special_cases = ["personal", "river-name", "obscure", "family-name", "tribal", "tribal-name", "place", "place-name", "family", "saint's", "saint", "water", "land", "mill", "church"]
     derivations = row["Derivation"]
     if pd.isna(derivations):
@@ -203,12 +204,9 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
                             break
                         # The word isn't a known non-definition starter, so check if it contains any of the known languages. If it doesn't, then it's part of the current definition. 
                         # If it does contain a known language, then it's a new derivation and we should stop merging.
-                        contains_language = False
-                        for lang in languages:
-                            if lang in next_derivation:
-                                contains_language = True
-                                valid_derivation = True
-                                break
+                        contains_language = get_language_from_derivation(next_derivation, languages) is not None
+                        if contains_language:
+                            valid_derivation = True
                         # There are special cases and require special handling (one of the only cases where the definition might not have a language associated with it). 
                         # If the first word is one of these, then we can assume it's a separate derivation and not part of the current definition. We can stop merging and move on to the next derivation.
                         if next_first_word in special_cases:
@@ -323,7 +321,12 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
 def get_language_from_derivation(derivation: str, languages: list[str]) -> str | None:
     """Extract the language from the derivation string."""
     for lang in languages:
-        if lang in derivation:
+        # KEPN's one-letter code C must be a whole token: a leading C in
+        # Caundle/Coton/Canford (or Celtic) is not a language annotation.
+        if lang == "C":
+            if re.search(r"(?<!\w)C(?!\w)", derivation):
+                return lang
+        elif lang in derivation:
             return lang
     return None
 

@@ -178,8 +178,9 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
             # Skip processing if the derivation is empty
             continue
         current_first_word = derivation.split()[0].strip("()[]\"' ")
-        if current_first_word in non_definition_starters:
-            # Skip processing if the derivation is a known non-definition starter
+        if (current_first_word.lower() in non_definition_starters
+                and get_language_from_derivation(derivation, languages) is None):
+            # Only skip an untagged continuation, not a genuine KEPN root.
             continue
         valid_derivation = False
         # Keep checking the next derivation until we find a valid one or run out of derivations, joining them together if necessary. 
@@ -190,8 +191,9 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
                 if next_derivation:
                     # If the first word of the next derivation is one of these identifiers, then it's part of the current definition and not a new derivation. Append it to the current derivation.
                     next_first_word = next_derivation.split()[0].strip("()[]\"' ").lower()
-                    if next_first_word in non_definition_starters:
-                        # This IS a known non-definition starter, so merge it
+                    if (next_first_word in non_definition_starters
+                            and get_language_from_derivation(next_derivation, languages) is None):
+                        # Only fold untagged continuation text into the preceding meaning
                         derivation += "; " + next_derivation
                         i += 1  # Skip the next derivation since we've merged it
                     else:

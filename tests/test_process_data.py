@@ -228,3 +228,59 @@ def test_obscure_element_without_attested_name_falls_back_to_place(isolated_pars
     assert row["Language"] == "Unknown"
     assert row["Meaning"] == "Obscure element"
     assert bool(row["Reconstructed"]) is False
+
+
+@pytest.mark.parametrize(
+    "place_name,derivation,element,language,meaning",
+    [
+        (
+            "Sisland",
+            "land Old English - Land (as part of earth's surface).",
+            "land",
+            "Old English",
+            "Land (as part of earth's surface).",
+        ),
+        ("Waterperry", "water Middle English - water", "water", "Middle English", "water"),
+        ("Shottermill", "mill Modern English - A mill.", "mill", "Modern English", "A mill."),
+    ],
+)
+def test_language_tagged_special_words_remain_elements(
+    isolated_parser_env, place_name, derivation, element, language, meaning
+):
+    result = parse_elements(
+        pd.DataFrame([{"PlaceName": place_name, "Etymology": "", "Derivation": derivation}])
+    )
+
+    record = result.loc[result["Element"] == element].iloc[0]
+    assert record["Language"] == language
+    assert record["Meaning"] == meaning
+    assert record["Frequency"] == 1
+    assert place_name.lower() not in result["Element"].tolist()
+
+
+def test_untagged_land_water_mill_keep_original_fallback(isolated_parser_env):
+    for place_name, fragment in [
+        ("Land Sample", "land"),
+        ("Water Sample", "water"),
+        ("Mill Sample", "mill"),
+    ]:
+        result = parse_elements(
+            pd.DataFrame([{"PlaceName": place_name, "Etymology": "", "Derivation": fragment}])
+        )
+        assert result.iloc[0]["Element"] == place_name.lower()
+
+
+def test_real_kepn_land_water_mill_survive_parsing(isolated_parser_env):
+    kepn_dir = Path(__file__).resolve().parents[1] / "data" / "raw" / "kepn"
+    df = combine_csvs_to_dataframe(kepn_dir, separate_header_file=False, ignored_columns=[])
+    names = {"Sisland", "Waterperry", "Shottermill"}
+    examples = df[df["PlaceName"].isin(names)]
+    assert set(examples["PlaceName"]) == names
+
+    result = parse_elements(examples)
+    for element, language in [
+        ("land", "Old English"),
+        ("water", "Middle English"),
+        ("mill", "Modern English"),
+    ]:
+        assert not result[(result["Element"] == element) & (result["Language"] == language)].empty

@@ -14,8 +14,10 @@ It appends the following columns to the GeoDataFrame and its processed CSV:
 - `ElementCandidates`: JSON array of matching candidate elements. Each candidate
   includes `element`, NFC-casefolded `matched_alias`, start/end offsets in the
   **normalised name** (end-exclusive), a purely textual `position`, KEPN
-  `source_ids`, and distinct `language_options`. Overlapping or contradictory
-  candidates are retained rather than arbitrarily ranked.
+  `source_ids`, distinct `language_options`, and paired `source_records`
+  (`id`, exact source `language` label, and `reconstructed` flag). The separate
+  language summary is not a source-to-language mapping. Overlapping or
+  contradictory candidates are retained rather than arbitrarily ranked.
 - `ElementCandidateCount`: number of candidates, **not** number of
   confirmed etymological components.
 - `ElementMatchStatus`: `missing_name`, `no_candidates`, or
@@ -29,6 +31,9 @@ where an alias appears in the text, not a linguistically established prefix
 or suffix. Short (1-2 character) aliases only match complete tokens to
 reduce obvious false positives. The system does not assign a single language,
 confidence score, final segmentation, or map colour based on these candidates.
+The current matcher rejects alias spellings not supported by identity or
+NFC/casefold normalisation of their source element. Curated historical
+spellings require a separately reviewed and provenance-labelled rule.
 
 Source language options preserve the distinction between the KEPN code `C`
 (unresolved) and the literal `Celtic` family-level label; neither is

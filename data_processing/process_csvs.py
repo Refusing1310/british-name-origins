@@ -175,54 +175,43 @@ def parse_row(row: pd.Series, elements: dict[int, ElementRecord], non_definition
     derivations = row["Derivation"]
     if pd.isna(derivations):
         return # Skip processing if derivations is NaN
-    # Split the derivations into individual elements (sometimes a semicolon is used in a definition which complicates matters)
+    # Semicolons can separate genuine elements or clauses within a definition.
+    # Use an explicit cursor: a fragment merged into a meaning must not be
+    # revisited as an independent element on a later outer-loop iteration.
     derivations_list = str(derivations).split(";")
-    for i in range(len(derivations_list)):
+    i = 0
+    while i < len(derivations_list):
         derivation = clean_text(derivations_list[i])
-        if not derivation or derivation == "":
-            # Skip processing if the derivation is empty
+        i += 1
+        if not derivation:
             continue
         current_first_word = derivation.split()[0].strip("()[]\"' ")
         if (current_first_word.lower() in non_definition_starters
                 and get_language_from_derivation(derivation, languages) is None):
             # Only skip an untagged continuation, not a genuine KEPN root.
             continue
-        valid_derivation = False
-        # Keep checking the next derivation until we find a valid one or run out of derivations, joining them together if necessary. 
-        # This is to handle cases where a semicolon is used in a definition, which can cause the derivation to be split incorrectly.
-        while not valid_derivation:
-            if i + 1 < len(derivations_list):
-                next_derivation = clean_text(derivations_list[i + 1])
-                if next_derivation:
-                    # If the first word of the next derivation is one of these identifiers, then it's part of the current definition and not a new derivation. Append it to the current derivation.
-                    next_first_word = next_derivation.split()[0].strip("()[]\"' ").lower()
-                    if (next_first_word in non_definition_starters
-                            and get_language_from_derivation(next_derivation, languages) is None):
-                        # Only fold untagged continuation text into the preceding meaning
-                        derivation += "; " + next_derivation
-                        i += 1  # Skip the next derivation since we've merged it
-                    else:
-                        # If the next derivation is just one word, then it's a new derivation, simply the name of a location
-                        if len(next_derivation.split()) == 1:
-                            valid_derivation = True
-                            break
-                        # The word isn't a known non-definition starter, so check if it contains any of the known languages. If it doesn't, then it's part of the current definition. 
-                        # If it does contain a known language, then it's a new derivation and we should stop merging.
-                        contains_language = get_language_from_derivation(next_derivation, languages) is not None
-                        if contains_language:
-                            valid_derivation = True
-                        # There are special cases and require special handling (one of the only cases where the definition might not have a language associated with it). 
-                        # If the first word is one of these, then we can assume it's a separate derivation and not part of the current definition. We can stop merging and move on to the next derivation.
-                        if next_first_word in special_cases:
-                            valid_derivation = True
-                            break
-                        if not contains_language:
-                            # Add it as a non-definition starter for future reference
-                            non_definition_starters.append(next_first_word)
-                            derivation += "; " + next_derivation
-                            i += 1  # Skip the next derivation since we've merged it
-            else:
-                valid_derivation = True  # No more derivations to check, so we're done merging
+
+        # Consume continuation clauses, but leave the cursor on the next
+        # independent root. Empty semicolon fragments must also advance it.
+        while i < len(derivations_list):
+            next_derivation = clean_text(derivations_list[i])
+            if not next_derivation:
+                i += 1
+                continue
+            next_first_word = next_derivation.split()[0].strip("()[]\"' ").lower()
+            contains_language = get_language_from_derivation(next_derivation, languages) is not None
+            if next_first_word in non_definition_starters and not contains_language:
+                derivation += "; " + next_derivation
+                i += 1
+                continue
+            if len(next_derivation.split()) == 1:
+                break
+            if contains_language or next_first_word in special_cases:
+                break
+            # This looks like an untagged continuation of the current meaning.
+            non_definition_starters.append(next_first_word)
+            derivation += "; " + next_derivation
+            i += 1
         element = None
         meaning = None
         match current_first_word.lower():

@@ -6,7 +6,6 @@ import pandas as pd
 
 import constants.constants as constants
 from data_processing.process_csvs import process_kepn_data, save_combined_data
-# from data_processing.process_excel import process_excel_file
 from data_processing.convert_to_gdf import convert_to_geo_dataframe, load_processed_geo_dataframe
 from etymology.place_name_parser import parse_place_names
 from data_processing.produce_aliases import build_aliases_csv
@@ -30,11 +29,6 @@ def import_and_process_data() -> gpd.GeoDataFrame:
                 Path("data/processed/elements.csv").unlink()
             if Path("data/processed/non_derivation_starters.csv").exists():
                 Path("data/processed/non_derivation_starters.csv").unlink()
-    # NOTE - this is not currently used in the script, but is included for future use if needed.
-    # reprocess = input("Do you want to reprocess the office of national statistics place names data? (y/n): ").strip().lower()
-    # if reprocess == "y":
-        # if Path("data/processed/ons.csv").exists():
-        #     Path("data/processed/ons.csv").unlink()
 
     # Check if the processed files files already exist for the key english place names data, and if not, create them.
     rebuild_elements = (not Path("data/processed/ground_truth.csv").exists()
@@ -66,23 +60,14 @@ def import_and_process_data() -> gpd.GeoDataFrame:
             ordinance_survey_df = Path("data/processed/ordinance_survey_combined.csv")
         geo_df = convert_to_geo_dataframe(ordinance_survey_df)
 
-    # Check if the processed files already exist for the office of national statistics data, and if not, create them.
-    # NOTE - this is not currently used in the script, but is included for future use if needed.
-    # if not Path("data/processed/ons.csv").exists():
-    #     office_of_national_statistics_df = process_excel_file(
-    #         excel_file_path=Path("data/raw/ons_data/datadownloadv2.xlsx"),
-    #         ignored_columns= constants.ONS_IGNORED_COLUMNS,
-    #         csv_file_path=Path("data/processed/ons.csv")
-    #     )
-    # else:
-    #     office_of_national_statistics_df = Path("data/processed/ons.csv")
+    # TODO: integrate Office for National Statistics imports when supported.
 
     # Create aliases.csv from elements.csv
     # Aliases must be rebuilt whenever their element source is rebuilt, even
     # if a previous run left an existing (now stale) aliases.csv behind.
     if rebuild_elements or not Path("data/processed/aliases.csv").exists():
         # Create aliases.csv from elements.csv
-        aliases_df = build_aliases_csv(elements_df, output_path=Path("data/processed/aliases.csv"))
+        build_aliases_csv(elements_df, output_path=Path("data/processed/aliases.csv"))
 
     geo_df = parse_place_names(geo_df, elements_df, ground_truth_df)
     # Store in csv file to prevent having to reprocess the data every time the script is run.
@@ -90,4 +75,4 @@ def import_and_process_data() -> gpd.GeoDataFrame:
     return geo_df
 
 if __name__ == "__main__":
-    geo_df = import_and_process_data()
+    import_and_process_data()

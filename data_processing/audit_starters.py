@@ -56,7 +56,8 @@ def audit_starters(rows: pd.DataFrame, starters: set[str]) -> list[dict]:
     record has been lost; the parser's tagged-root exemption is handled in #10.
     """
     candidates: dict[tuple[str, str], dict] = {}
-    for _, row in rows.iterrows():
+    untagged_counts: dict[str, int] = defaultdict(int)
+    for combined_row_index, (_, row) in enumerate(rows.iterrows()):
         derivations = row.get("Derivation")
         if pd.isna(derivations):
             continue
@@ -70,6 +71,9 @@ def audit_starters(rows: pd.DataFrame, starters: set[str]) -> list[dict]:
                 continue
             language = get_language_from_derivation(derivation, KEPN_LANGUAGES)
             if language is None:
+                # Untagged fragments include meaning continuations and
+                # ambiguous roots; a count does not establish either.
+                untagged_counts[word] += 1
                 continue
             key = (word, language)
             candidate = candidates.setdefault(key, {
@@ -77,10 +81,20 @@ def audit_starters(rows: pd.DataFrame, starters: set[str]) -> list[dict]:
                 "language": language,
                 "occurrences": 0,
                 "places": [],
+                "examples": [],
+                "untagged_fragments": 0,
             })
             candidate["occurrences"] += 1
             if place not in candidate["places"] and len(candidate["places"]) < 5:
                 candidate["places"].append(place)
+            if len(candidate["examples"]) < 5:
+                candidate["examples"].append({
+                    "combined_row_index": combined_row_index,
+                    "place_name": place,
+                    "source_fragment": str(segment).strip(),
+                })
+    for candidate in candidates.values():
+        candidate["untagged_fragments"] = untagged_counts[candidate["starter"]]
     return sorted(candidates.values(), key=lambda x: (-x["occurrences"], x["starter"], x["language"]))
 
 
@@ -97,7 +111,11 @@ def main() -> None:
     report = {
         "starter_count": len(starters),
         "tagged_collisions": audit_starters(rows, starters),
-        "note": "Review these labels against the source; no automatic reclassification is performed.",
+        "note": (
+            "Evidence contains zero-based combined-row indices and at most five "
+            "raw fragments per candidate. Untagged fragments may be continuations "
+            "or actual elements. Review the KEPN source; no reclassification is made."
+        ),
     }
     print(json.dumps(report, indent=2, ensure_ascii=False))
 

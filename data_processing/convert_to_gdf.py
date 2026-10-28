@@ -31,3 +31,11 @@ def convert_to_geo_dataframe(df1):
     gdf = gdf.drop(columns=["GEOMETRY_X", "GEOMETRY_Y"], errors='ignore')
 
     return gdf
+
+def load_processed_geo_dataframe(csv_path: str | Path) -> gpd.GeoDataFrame:
+    """Restore Point geometry and British National Grid CRS after CSV serialization."""
+    df = pd.read_csv(csv_path)
+    if "geometry" not in df.columns:
+        raise ValueError("Processed OS CSV must have a WKT geometry column.")
+    geometry = gpd.GeoSeries.from_wkt(df["geometry"], crs="EPSG:27700")
+    return gpd.GeoDataFrame(df.drop(columns=["geometry"]), geometry=geometry, crs="EPSG:27700")

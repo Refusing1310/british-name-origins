@@ -1,13 +1,13 @@
 # Development governance and release policy
 
-**Approved direction:** 29 October 2026. This is the standing Product Owner policy for this repository.
+**Approved direction:** updated 9 November 2026. This is the standing Product Owner policy for this repository.
 
 ## Product Owner involvement
 
-- Involve the Product Owner before deciding major product scope, user experience or visual design direction, architecture with lasting product consequences, ethics, privacy, accessibility trade-offs, pricing/licensing, externally visible behaviour, and other consequential choices. Present a concise recommendation and alternatives, then await the relevant decision.
-- Continue authorised routine engineering autonomously: implementation, testing, bug fixing, documentation, small refactors, dependency hygiene and review preparation. Do not request approval for each low-risk change within scope.
-- Escalate high-risk security changes, significant data-use decisions, material safety risks, irreversible operations and new permissions/integrations before proceeding. A GitHub issue is not itself permission to cross an approval boundary.
-- Keep Product Owner reviews focused: group related, compatible changes for review when practical; preserve issue/commit traceability.
+- Routine development, security/design/architecture decisions and non-public protected-branch code merges are delegated without per-change Product Owner approval.
+- Preserve exact-head required checks, enforced reviews and branch protections; record consequential changes and rollback in PRs.
+- Before **each public release**, present the exact candidate revision, security and design changes, independent security review, test evidence, remaining risks and rollback, and obtain explicit Product Owner go/no-go.
+- This merge delegation does not authorise spending, contracting, external disclosures, production/credential changes, clinical/human work or weakening security gates. See https://github.com/Refusing1310/engineering-control/issues/128.
 
 ## Security review: public-release gate, not a private-development gate
 
@@ -19,7 +19,7 @@
 
 ## Branches, checks and deployment
 
-- Work on topic branches and draft PRs until reviewable. Do not merge to a protected main/master branch, deploy, release, change credentials, alter branch protections, or publish without existing specific authorisation.
+- Work on topic branches and reviewable PRs. Protected-branch merges may proceed after exact-head CI/security, required reviews and existing protections without owner approval unless the merge itself publicly deploys or publishes. Public releases and changes to credentials, production or security protections remain separately controlled.
 - Do not silently disable required CI/security checks, weaken workflow permissions, or claim a review occurred when it did not. If older reviewer-specific automation conflicts with this policy or is unavailable, propose a safe adjustment separately rather than bypassing the check.
 - Verify checks against the current exact PR head; distinguish tested, skipped, pending, failed and untested evidence. Fix ordinary defects autonomously within approved scope.
 - A private preview does not itself require the public-release independent assessment, but it must remain private/isolated and respect existing credential, environment, external-access and deployment restrictions.

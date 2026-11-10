@@ -96,3 +96,20 @@ def test_pipeline_rebuilds_stale_aliases_when_elements_are_regenerated(
     actual = pd.read_csv(old_aliases)
     assert actual["element"].tolist() == ["ham"]
     assert actual["alias"].tolist() == ["ham"]
+
+
+def test_pipeline_rejects_legacy_cache_without_overwriting_it(tmp_path, monkeypatch):
+    import main
+    import pytest
+
+    monkeypatch.chdir(tmp_path)
+    processed = tmp_path / "data" / "processed"
+    processed.mkdir(parents=True)
+    ground_truth = processed / "ground_truth.csv"
+    ground_truth.write_text("PlaceName,Derivation\nHam,ham Old English\n")
+    (processed / "elements.csv").write_text("Element\nham\n")
+    answers = iter(["n", "n"])
+    monkeypatch.setattr("builtins.input", lambda _prompt: next(answers))
+    with pytest.raises(ValueError, match="cache lacks source lineage"):
+        main.import_and_process_data()
+    assert ground_truth.read_text() == "PlaceName,Derivation\nHam,ham Old English\n"

@@ -41,6 +41,12 @@ def import_and_process_data() -> gpd.GeoDataFrame:
     else:
         ground_truth_df = pd.read_csv(Path("data/processed/ground_truth.csv"))
         elements_df = pd.read_csv(Path("data/processed/elements.csv"))
+        if (not {"KEPNSourceFile", "KEPNRecordNumber"}.issubset(ground_truth_df.columns)
+                or not Path("data/processed/element_sources.csv").is_file()):
+            raise ValueError(
+                "KEPN cache lacks source lineage; rerun and choose to reprocess "
+                "English place names from the raw data"
+            )
     
     # Check if the geo dataframe already exists, and if not, create it.
     if Path("data/processed/ordinance_survey_gdf.csv").exists():   

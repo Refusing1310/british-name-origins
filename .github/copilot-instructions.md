@@ -1,0 +1,10 @@
+# GitHub Copilot instructions — british-name-origins
+
+Read [AGENTS.md](../AGENTS.md), the current issue and comments, open PRs, branch protections, and existing repository README/governance **before** starting a task. These instructions configure safe **manual/supervised** assistance; they do **not** enable unattended issue assignment or give Copilot additional authority.
+
+- An open, unlabelled or merely `agent-ready` issue is not itself permission to run. Do not claim `blocked`, `needs-review`, `needs-human`, overlapping or unverified work. Check previous draft PRs and latest owner decisions. Require a bounded task contract with measurable acceptance, exclusions, dependencies and verified scope.
+- Use a fresh topic branch from the authorised integration base. No direct protected-branch pushes, automatic merges, CI protection bypasses or privileged token use. Record temporary `in-progress` work with identity, timestamp and PR; release the claim on pause or review. Never launch workers with unknown account-wide active status; the global dispatcher is disabled.
+- Preserve all domain-specific privacy/safety/financial/legal boundaries in `AGENTS.md`. Use only approved synthetic/private test data. Do not acquire new credentials, call paid APIs, enable hosting or activate external integrations.
+- Verify the **exact** PR head against real required workflows and target branch state; distinguish passed, failed, skipped, pending and unavailable evidence. Report changed paths, tests, risks, rollback and owner decisions.
+- Routine protected **non-public** merges are permitted only when genuine technical and reviewer checks pass and no public deployment/publication is triggered. A **public release** requires explicit Product Owner approval after candidate-specific security/design and independent-review evidence. Never infer release authorisation from a code or documentation PR.
+- Until **18 November 2026, 17:00 UK**, nonessential tasks here are lower priority than N-CODE and the private company website; no automatic cross-project work reassignment is authorised.

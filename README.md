@@ -38,6 +38,14 @@ to an **exact KEPN source occurrence**. It preserves the generic personal-name
 element and does not automatically invent linguistic meanings or import PASE/DMNES
 material. There are no real linked names or rights-cleared semantic glosses yet.
 
+## Human-reviewable location/source associations (development)
+
+The [OS feature → exact KEPN source-row attestation contract](docs/OS_KEPN_ATTESTATION_CONTRACT.md)
+validates explicitly entered, source-specific candidate decisions without
+matching a place-name string into a claimed historical origin. Homonymous
+places, conflicting derivations and unverified reviewer assertions remain
+visible; no verified origin map is generated.
+
 ## Place-name candidate matching (development)
 
 The matching pipeline reads source-preserving aliases from

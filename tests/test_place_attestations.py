@@ -96,6 +96,10 @@ def test_mismatched_name_and_unrelated_substring_need_explicit_review():
 ])
 def test_missing_unreviewed_invalid_or_unattributed_links_fail_closed(field, value):
     os_features, kepn, links = example()
+    # Pandas 3 rejects an incompatible test value on a typed column before
+    # the validator receives it. Use object dtype to model untrusted input
+    # faithfully (and test our own type-checks rather than pandas casting).
+    links[field] = links[field].astype(object)
     links.at[0, field] = value
     with pytest.raises(ValueError):
         validate_place_attestations(os_features, kepn, links)

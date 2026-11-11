@@ -30,6 +30,14 @@ for the other.
 
 Existing processed caches without source lineage must be regenerated from
 the bundled raw KEPN CSVs; this PR does not silently overwrite them.
+## Personal-name meaning provenance (development)
+
+The [curated name-link contract](docs/PERSONAL_NAME_LINKS.md) permits a separately
+licensed, human-reviewed personal-name registry to be linked by local name ID
+to an **exact KEPN source occurrence**. It preserves the generic personal-name
+element and does not automatically invent linguistic meanings or import PASE/DMNES
+material. There are no real linked names or rights-cleared semantic glosses yet.
+
 ## Place-name candidate matching (development)
 
 The matching pipeline reads source-preserving aliases from
